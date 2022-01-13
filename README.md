@@ -35,7 +35,7 @@ Aside from that I'm just keeping the Dash PR updated in alignment with the offic
 [04.01.2022 Tuesday 2hrs](#04012022-tuesday)  
 [05.01.2022 Wednesday 4hrs](#05012022-wednesday)  
 [11.01.2022 Tuesday 4hrs](#11012022-tuesday)  
-[12.01.2022 Wednesday TBD](#12012022-wednesday)  
+[12.01.2022 Wednesday 7hrs](#12012022-wednesday)  
 
 ### 04.01.2022 Tuesday
 
@@ -346,5 +346,168 @@ time in future.
 The 2068 PR has two approvals, Heimdall and Eridanus, but has already fallen behind
 develop. Updating again... Now I need two more approvals, at least one from dev
 and one from security.
+
+Okay looking at Heimdall, the smoke testing repo.
+```
+make build
+make test
+```
+52/52 tests passed.
+
+Now to add Dash. Oh wait, there's this.
+
+```
+make smoke
+```
+
+> Retrying (Retry(total=5, connect=5, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7faa18962280>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+
+Will it connect to my local cluster? No. It's a kubernetes thing.  
+Right ok back to testing the node-launcher then.  
+
+Do I have enough space on my desktop pc for k8s?  
+I actually found a 400GB virtualbox image called k8s.  
+It's just one machine but perhaps that will be enough?  
+Couldn't remember the root password but I did manage to connect from my work laptop using my ssh key. Nice!  
+Got to a point where I need to know the sudo password. I can't remember.  
+Boot into recovery mode, then root shell, then force change passwords to `p` (nice and easy)  
+
+Updated kube config to point to new vm assigned ip.  
+Forgot for a moment that all clusters are listed in the same config file.  
+Hmm lens can't get in:
+
+> Cannot read property 'resetAfterIndex' of null
+
+An update sorted it.  
+Right now I'm in a cluster. It's doing things. What's it doing? Ahhhhh.  
+
+There's a thornode service in there, apparently running on the testnet and
+trying to catch up to the latest block.
+
+Do the helm charts have a mocknet option?
+
+Important note: you can see the nextChurnHeight on midgard like:  
+https://testnet.midgard.thorchain.info/v2/network
+
+You can see the current block height under `scannerHeight` here:  
+https://testnet.midgard.thorchain.info/v2/health
+
+```
+So I'm on block       1137241  
+and the testnet is on  992979
+```
+
+Time for a restart I think. Now how in dante's inferno do I do that again?
+
+```
+kubectl exec -it -n thornode-testnet thornode-77445588c5-ljbxh "--" sh
+make status
+```
+
+> Unable to connect to the server: dial tcp: lookup 2F13ABBFD4CF1C7A2FE0D77382F51892.yl4.us-west-2.eks.amazonaws.com on 192.168.1.1:53: no such host
+
+It's using my aws config rather than my microk8s config.
+
+Just catching up to develop `Updating 6f921d4..b97f03b`.  
+
+Ah something's coming back to me. I may have established that microk8s is not
+suitable for the node-launcher in its current state due to it requiring access
+to aws network components. I think I switched over to using aws for simplicity,
+but that was before I worked out how to override the scripts.
+
+That's right, there's a `kube-scripts` folder in my `thorchain-cluster` repo. I
+think that's where I left off with this. Oh check out my log from `03.11.2021`.
+Heimdall said testnet wouldn't work right now. There have been many commits
+since then so going to try...
+
+Okay now there's something called `stagenet`. What is that!?  
+Initial commit Dec 05, 2021  
+https://gitlab.com/thorchain/thornode/-/merge_requests/2019  
+https://gitlab.com/thorchain/thornode/-/issues/1211  
+
+That PR/issue is really helpful to follow. We'll have to walk the same path in
+order to deploy dash to chaosnet.
+
+Updated `node-launcher` for dash to reflect the new stagenet changes and doge
+config, PR:  
+https://gitlab.com/thorchain/devops/node-launcher/-/merge_requests/361
+
+Now `make status` retuned for testnet:
+```
+API         http://:1317/thorchain/doc/
+RPC         http://:26657
+MIDGARD     http://:8080/v2/doc
+
+CHAIN       SYNC       BLOCKS
+THOR        85.505%    1,153,617/1,349,182
+```
+
+The IP isn't set correctly. Using the k8s host IP doesn't work.  
+
+Still, this is good.
+
+Side note: my `[bugfix] correct expected vault sort order in keeper_vault_test`
+was merged in :)
+
+Looks like there's a lot of progress getting Doge merged in atm.
+
+> testnet is broken due to binance full node can't find peers to sync
+- heimdall
+
+Lets try dash on my own `stagenet` then... I'm going to have to update my
+thornode gitlab docker image too.  
+
+So I ran `make install`, selected `stagenet` with `validator` node type. Got the
+error:
+
+> :: Mnemonic generation failed. Please try again.
+
+The code is in `core.sh`:
+```bash
+create_mnemonic() {
+  local mnemonic
+  if ! kubectl get -n "$NAME" secrets/thornode-mnemonic >/dev/null 2>&1; then
+    echo "=> Generating THORNode Mnemonic phrase"
+    mnemonic=$(kubectl run -n "$NAME" -it --rm mnemonic --image=registry.gitlab.com/thorchain/thornode --restart=Never --command -- generate | grep MASTER_MNEMONIC | cut -d '=' -f 2 | tr -d '\r')
+    [ "$mnemonic" = "" ] && die "Mnemonic generation failed. Please try again."
+    kubectl -n "$NAME" create secret generic thornode-mnemonic --from-literal=mnemonic="$mnemonic"
+    echo
+  fi
+}
+```
+
+```
+kubectl run -n "thornode-stagenet" -it --rm mnemonic --image=registry.gitlab.com/thorchain/thornode --restart=Never --command -- generate
+```
+
+Well that worked, I think the arguments to cut and tr probably are inconsistent
+with the versions I have bundled with macos.
+
+```
+echo 'export MASTER_MNEMONIC=urge wife assault steel sphere parade royal cabin tiger endless say error onion thunder provide husband cannon enforce few orient toast measure wish purchase' | \
+grep MASTER_MNEMONIC | cut -d '=' -f 2 | tr -d '\r'
+```
+
+Oh that worked just fine. Ah they're running in the docker container, right?
+
+```
+kubectl run -n "thornode-stagenet" -it --rm mnemonic --image=registry.gitlab.com/thorchain/thornode --restart=Never --command -- generate | grep MASTER_MNEMONIC | cut -d '=' -f 2 | tr -d '\r'
+
+mnemonic=$(kubectl run -n "thornode-stagenet" -it --rm mnemonic --image=registry.gitlab.com/thorchain/thornode --restart=Never --command -- generate | grep MASTER_MNEMONIC | cut -d '=' -f 2 | tr -d '\r')
+echo $mnemonic
+```
+
+Works fine. Perhaps we should just try again...
+
+I don't think this is using my image either.
+Also not quite sure how I got around the humongous hd space requirements of the
+PVCs.
+
+Need to search `cpu`, `memory` and `Gi` within `gd HEAD add-dash2` to see how I
+changed the specs to fit micro k8s. It'd be nice to have either mocknet with
+minimal specs or an entirely different kind of network which is designed to run
+on a k8s cluster of 1 machine, i.e. development.
+
+Alright that's my day.
 
 
