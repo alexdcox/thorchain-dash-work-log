@@ -41,6 +41,7 @@ Aside from that I'm just keeping the Dash PR updated in alignment with the offic
 [19.01.2022 Wednesday 7hrs](#19012022-wednesday)  
 [20.01.2022 Thursday 7hrs](#20012022-thursday)  
 [21.01.2022 Friday 7hrs](#21012022-friday)  
+[24.01.2022 Monday 2.5hrs](#24012022-monday)  
 
 ### 04.01.2022 Tuesday
 
@@ -1681,3 +1682,49 @@ Some things to try:
 `make destroy-aws`
 
 audi5k.
+
+
+### 24.01.2022 Monday
+
+Ah need to fully clear the previous cluster. Some NIs left over.
+Okay fresh cluster.
+
+Back to trying to get `testnet` rpc port configured properly with dash.
+
+Is there a fast way to get the name of the node which is running the dash service?
+
+```
+kubectl -n thornode-testnet get services --filter dash-daemon
+kubectl -n thornode-testnet get services dash-daemon
+kubectl -n thornode-testnet get pods dash-daemon
+
+# get the namespace (testnet/mainnet/stagenet)
+kubectl get namespaces | awk '/thornode-*/{print $1}'
+
+# get the node name
+kubectl get pods -o wide -n thornode-testnet | awk '/dash-daemon*/{print $7}'
+
+# all-in-one shell into whatever node is running the dash pod
+kubectl node-shell $(kubectl get pods -o wide -n $(kubectl get namespaces | awk '/thornode-*/{print $1}') | awk '/dash-daemon*/{print $7}')
+```
+
+Ahh found it. Network needs to be `test` not `testnet`. Just needed a fresh pair of eyes.
+
+Sweet, cluster is ALL GREEN.
+
+Unfortunately, there's not a configuration for `mocknet` on the node-launcher
+any more. I'd like it back so I can test a swap. Perhaps not worth the effort
+though, it'll get tested soon enough.
+
+Going to clean up what I have and push.
+Separating into specific commits:
+- Allow binance daemon to be disabled
+- Fix dashDaemon urls in bifrost values
+- Fix typo in dogecoin-daemon
+
+Okay merge request updated:
+https://gitlab.com/thorchain/devops/node-launcher/-/merge_requests/361
+
+Just 2.5 hours clocked for today on dash. Going to switch over to Decred and get
+it up to this step before switching back to dash.
+
