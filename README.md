@@ -42,6 +42,13 @@ Aside from that I'm just keeping the Dash PR updated in alignment with the offic
 [20.01.2022 Thursday 7hrs](#20012022-thursday)  
 [21.01.2022 Friday 7hrs](#21012022-friday)  
 [24.01.2022 Monday 2.5hrs](#24012022-monday)  
+[26.01.2022 Wednesday 5.5hrs](#26012022-wednesday)  
+[27.01.2022 Thursday 2hrs](#27012022-thursday)  
+[28.01.2022 Friday 2hrs](#28012022-friday)  
+[03.02.2022 Thursday 7hrs](#03022022-thursday)  
+[08.02.2022 Tuesday 7hrs](#08022022-tuesday)  
+[09.02.2022 Wednesday 2hrs](#09022022-wednesday)  
+[10.02.2022 Thursday 7hrs](#10022022-thursday)  
 
 ### 04.01.2022 Tuesday
 
@@ -1728,3 +1735,1167 @@ https://gitlab.com/thorchain/devops/node-launcher/-/merge_requests/361
 Just 2.5 hours clocked for today on dash. Going to switch over to Decred and get
 it up to this step before switching back to dash.
 
+### 26.01.2022 Wednesday
+
+I've received some troubling feedback from Pluto for the `thornode` repo:
+- He asked me to revert a bugfix in `pubkey2address` which added mocknet support
+- `dashd-go` he wants me to have my changes merged into the official `dashd-go`.
+
+Looks like I need to get my changes added to the official repo:
+`github.com/dashevo/dashd-go`
+
+Will need to talk with QuantumExplorer. Ahh, discord is having an api outage.  
+And the world grinds to a halt.
+
+I remember having some github related problems before trying to for the dashd-go
+project. That's why my repo isn't technically a fork, it's a modified clone.
+Getting my changes into the original might be tricky.
+
+github.com/dashevo/dashd-go  
+github.com/alexdcox/dashd-go  
+
+Maybe I'll delete my dashd-go and change it to dashd-go-clone or something.  
+Then fork the official dashd-go.
+
+> You've already forked dashd-go
+> alexdcox/btcd
+
+Damn. That was the issue. Github thinks I've forked `dashevo/dashd-go` to
+`alexdcox/btcd` when that is forked from `btcsuite/btcd`, as you would expect.
+It even says that if you click through to `alexdcox/btcd`. What the hell?
+
+Oh this is why:  
+github.com/btcsuite/btcd -> github.com/alexdcox/btcd  
+github.com/btcsuite/btcd -> github.com/dashevo/dashd-go  
+
+So I can replace alexdcox/btcd with dashevo/dashd-go  
+`mv btcd btcd-backup`  
+Just going to leave that there for now and delete my `btcd` repo.  
+
+I want to do something like this:
+```
+git difftool HEAD..file://../dashd-go-clone
+```
+
+Maybe I can add it as a remote?
+
+```
+git remote add clone ../dashd-go-clone
+git remote update
+git diff master remotes/clone/master
+```
+
+NICE. Now with the difftool?
+
+```
+git difftool master remotes/clone/master
+```
+
+Okay 250 off files. Fun times. Need to make sure I replace:  
+github.com/btcsuite/btcd  
+with  
+github.com/dashevo/dashd-go  
+
+
+The problem I'm having is there's a circular dep between btcsuite/btcd and
+btcsuite/btcutil which essentially means you have to recreate both, updating
+one and not the other will just break because at some point it uses a function
+from the other which in turn calls back to the current package which is now
+at a different package path.
+
+I could try including `dashutil/btcutil` IN `dashd-go/btcd`. Then I could do a
+find and replace:  
+`btcsuite/btcutil` -> `dashevo/dashd-go/dashutil`
+
+Can these be left as the original btcsuite ones?  
+btcsuite/btclog  
+btcsuite/btcec  
+btcsuite/btcwallet  
+btcsuite/btcrpcclient  
+btcsuite/go-socks  
+btcsuite/goleveldb  
+btcsuite/websocket  
+btcsuite/Paymetheus  
+btcsuite/snappy-go  
+
+Right fixed those paths. Running tests. Lots of failures. I see from July last
+year that I already commented out a load of broken tests.
+
+Maybe we can fix all the broken copyright years?  
+Find  
+[Cc]opyright( \(c\))? (\d+-\d+|\d+, ?\d+|\d+).*(dashevo|Dash Core)  
+Replace:  
+Copyright (c) 2022-2032 The $3  
+
+I didn't bother in the end, seems silly to worry about it. If it were me I'd
+remove all those copyright banners. Seems very 1990s to copy that into every
+single file when you can just have a `LICENSE` at the root directory. It's not
+as if adding it to every single goddamn file makes a blind bit of difference
+anyway, apart from bloating the entire project.
+
+Oh interesting. alex@akselrod.org ported some code form Decred back in 2017, it
+made its way into Dash. They're more closely related than I knew.
+
+- add chainlock/instantlock
+- remove client.BackendVersion getinfo (no longer part of dashd)
+- Update chainparams for Dash, remove simnet
+  This originally included getting `go test` working.  
+  New plan, I'm not going to comment out the broken tests. I'll just ignore them.
+- Remove getinfo rpc command
+  Just wanted to double check this was the right thing to do:
+  `dash-cli getinfo`
+  > This call was removed in version 0.16.0. Use the appropriate fields from:
+
+Okay I have a PR here:  
+https://github.com/dashevo/dashd-go/pull/5
+
+Was going to write this but I think maybe it's a bit much:
+
+It's worth noting that `dashevo/dashd-go` was intentionally a full dash node
+written in golang, however I don't think the project was ever finished and it
+hasn't been maintained. There are many things that would need addressing to
+meet the original project goals. My PR just changes as little as possible in
+order to meet the needs of the Thorchain integration including:
+- changing package paths to match the fork url
+- updating chaincfg params
+- removing rpc calls that are no longer available
+- adding struct fields for the newer chainlock/instantsend features
+For this reason I'm not sure how it will be received...
+
+I'm just going to wait to see what comes back from that PR... hopefully a green
+light.
+
+Wrote a message on the Dash discord under dash-core-group. Prompting for info.
+
+Run out of things to do for now...
+
+### 27.01.2022 Thursday
+
+Brian Foster Requested:  
+TODO: Take a look at adding dash to the TC LP Calculator:  
+https://science.flipsidecrypto.com/thorchain/  
+
+Right so reworking the `thorchain-integration` branch of `dashd-go` so there is
+a single commit with the find and replace, along with a script to do that work
+so they can reproduce it.
+
+```
+gco -b thorchain-integration2
+git reset HEAD^1 --hard
+git reset HEAD^1 --soft
+```
+
+Remove simnet  
+
+```
+btcsuite/btcd      dashevo/dashd-go
+btcsuite/btcuitl   dashevo/dashd-go/dashutil
+```
+
+`gd thorchain-integration2 thorchain-integration`
+
+- [ ] Add package dashevo/dashd-go/dashutil
+
+  ```
+  gco thorchain-integration -- dashutil
+  gcam "Add package dashevo/dashd-go/dashutil"
+  ```
+
+- [ ] Update package paths: btcsuite/btcd to dashevo/dashd-go and btcsuite/btcutil to dashevo/dashd-go/dashutil
+
+  Command on mac:
+  ```
+  find . -type f -name '*.go' -exec gsed -i "s+btcsuite/btcd+dashevo/dashd-go+g" {} \;
+  find . -type f -name '*.go' -exec gsed -i "s+btcsuite/btcutil+dashevo/dashd-go/dashutil+g" {} \;
+  find . -type f -name '*.go' -exec gsed -i "s+btcutil\\.+dashutil.+g" {} \;
+  ```
+  
+  Commit message (sed not gsed):
+  ```
+  Update package paths: btcsuite/btcd to dashevo/dashd-go and btcsuite/btcutil to dashevo/dashd-go/dashutil
+  
+  This commit can be reproduced with the following commands:
+  find . -type f -name '*.go' -exec sed -i "s+btcsuite/btcd+dashevo/dashd-go+g" {} \;
+  find . -type f -name '*.go' -exec sed -i "s+btcsuite/btcutil+dashevo/dashd-go/dashutil+g" {} \;
+  find . -type f -name '*.go' -exec sed -i "s+btcutil\\.+dashutil.+g" {} \;
+  ```
+
+- [ ] Update chainparams for dash
+
+  ```
+  git show --stat 69ecae80
+  ```
+
+  ```
+  gd thorchain-integration2 thorchain-integration -- '*.go'
+  ```
+
+  These are the only main changes:
+  - chaincfg/params.go
+  - cmd/btcctl/config.go
+  - wire/protocol.go
+
+  Going to convert the decimal representations to hex to match the original
+  format.
+
+  ```
+  git difftool thorchain-integration2..thorchain-integration -- chaincfg/params.go cmd/btcctl/config.go wire/protocol.go
+  gcam "Update chainparams for dash"
+  ```
+
+- [ ] Remove getinfo rpc command
+
+  - rpcclient/infrastructure.go
+  - rpcclient/wallet.go
+
+  ```
+  git difftool thorchain-integration2..thorchain-integration -- rpcclient/infrastructure.go rpcclient/wallet.go
+  gcam "Remove getinfo rpc command"
+  ```
+
++2hrs. Most of today was other admin.
+
+### 28.01.2022 Friday
+
+Still being blocked by: https://github.com/dashevo/dashd-go/pull/6
+
+Need to address these questions:
+
+--------------------------------------------------------------------------------
+
+Hi @xodus3 just been looking at your patch for bifrost. Looks fine, although I'm
+not an expert on Dash specifics. So just putting it to you some hypotheticals
+that all need to be covered off that are dangerous. Make sure these are not
+possible:
+
+> Can a customer send a tx that Bifrost observes inbound to an asgard vault, but
+  the customer can later spend or remove. Like a coin on a string in a vending
+  machine. Examples include observing in mempool then user replace-by-fee the
+  tx elsewhere. 
+
+Dash doesn't support RBF. After talking with the Dash devs I'm going to switch
+the chainclient from chainlock-only to behave the same way other clients
+do *until* we see a chainlock - in which case we can immediately consider the
+transaction confirmed.
+
+> Can a user send poisoned tokens that cannot be spent by asgard later. For
+  example timelocked. Is there anything dash-specific here?
+
+Dash supports locktime, but the bifrost client is set to ignore transactions
+which have a non-zero locktime (as is the case with the other clients) There's
+also sequence number, but it's my understanding sequence numbers only come into
+play when locktime is used.
+
+> Can the user specify an address to send outbound that is not observed by
+  Bifrost. For example user does a swap from BTC to DASH and
+  specifies "eviladdress" that is a real address but Bifrost doesn't see the tx
+  outbound. Resulting in TC trying again and user getting a double-spend
+  output. Examples here might include custom address formats for fast payments
+  or something the dash client recognises but Bifrost isn't looking for when
+  scanning blocks. OR fast payments not even included in a block... but sent.
+  Or a txOut goes into a block with no chainlock, and is not observed (is that
+  a thing?)
+
+There aren't any custom addresses.  
+
+We're going to adopt the bitcoin "weighted confirmation requirement by
+transaction size" approach by default, and drop the confirmation requirement
+completely if and when we see the block for that transaction becoming
+chainlocked.
+
+I've got to restore some of the typical chainclient code here.
+
+> Similar for outbounds: Replace By Fee would allow a THORChain node to have
+  their outbound "observed" as being sent, but then be able to steal from
+  customer.
+
+We're covered here. No RBF.
+
+> There is no way for a recipient to "block" incoming funds?
+
+Nope.
+
+> Have the supply chain attack surface area from Pluto been addressed?
+
+If you're talking about 3p deps - changing from github/alexdcox to
+github/dashevo, that's being reviewed by the dash devs at the moment. Otherwise
+I'm not clued up just yet.
+
+> I assume latest develop has been merged in (I think so)?
+
+Yeah I've been continually merging dev. I'll keep checking... feel free to nudge
+me and I'll get on it.
+
+> Just checking this works...
+
+Have you checked or are you saying you'd like me to check it?
+
+> Otherwise all looks good. 
+
+Brilliant! Will let you know when I've made this next update,.
+
+--------------------------------------------------------------------------------
+
+Got to add the old chainclient config back.
+
+TODO: Is this right?
+```
+DefaultCoinbaseValue   = 10000
+```
+
+I found a way to turn off logging before. How did I do that?
+
+### 03.02.2022 Thursday
+
+How often is `dashclient/GetConfirmationCount` called?
+
+```
+curl -i --user thorchain --data-binary '{"jsonrpc": "1.0", "method": "getblockchaininfo"}' http://localhost:28443/
+```
+> curl: (52) Empty reply from server
+
+What's up with BCH?  
+It was something to do with my temperamental cluster orchestrator. Restart sorted it.  
+
+Keep getting `fail to sign keysign` errors.  
+> ERR fail to sign keysign error="The specified item could not be found in the keyring"
+
+What item?!  
+Keeps happening after block 5.  
+
+```
+  if txs != nil && (txs.TxArray == nil || len(txs.TxArray) < 1) {
+    fmt.Println("assuming no transactions, silently continuing")
+    return nil, nil
+  }
+```
+The above snippet calms that down when added to `queryKeysign`. Not entirely sure
+if it's the correct approach though.
+
+Right back to the question at hand...
+
+```
+error="fail to post network fee to thornode: fail to broadcast to THORChain,code:32, log:
+github.com/cosmos/cosmos-sdk/x/auth/ante.SigVerificationDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/sigverify.go:242
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.SigGasConsumeDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/sigverify.go:157
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.DeductFeeDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/fee.go:98
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.ValidateSigCountDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/sigverify.go:352
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.SetPubKeyDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/sigverify.go:93
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.RejectFeeGranterDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/fee_grant.go:26
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.ConsumeTxSizeGasDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/basic.go:142
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.ValidateMemoDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/basic.go:66
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.TxTimeoutHeightDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/basic.go:199
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/types/handler.go:40
+github.com/cosmos/cosmos-sdk/x/auth/ante.ValidateBasicDecorator.AnteHandle
+  /Users/adc/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/x/auth/ante/basic.go:34
+github.com/cosmos/cosmos-sdk/types.ChainAnteDecorators.func1
+  /Users/adc/go/pkg/mod/github.com/co
+```
+wow.
+
+Here's a quick command to just send a dash deposit to thorchain.  
+Need to rinse this command because I'm testing confirmation counts.  
+```bash
+dothedash() {
+  txid=$(dash-cli sendtoaddress yX6kD415WGpwwDkb1AEgJettjj775KSSUZ 1000)
+  rawtx=$(dash-cli createrawtransaction \
+    "[{\"txid\": \"$txid\", \"vout\": 1}]" \
+    '{"yMqULE4YJ7g3sUGu8ZNDofbJaCqaW92JtR": 100.0, "yX6kD415WGpwwDkb1AEgJettjj775KSSUZ": 899.99, "data": "6164643a646173682e646173683a7474686f72317765703830796e78356d346e3236683475766a3979726c766c633071366a6a6373766e736d76"}')
+  signed=$(dash-cli signrawtransaction $rawtx | jq -r '.hex')
+  dash-cli sendrawtransaction $signed
+}
+```
+
+```
+@dash/GetConfirmationCount
+  + 343151ed499202a551a4bf0ad7b7cfa5571164c58430e17ddeb8d413f0cd22a7
+
+@dash/getBlockRequiredConfirmation
+  + 343151ed499202a551a4bf0ad7b7cfa5571164c58430e17ddeb8d413f0cd22a7
+totalTxValue:        10000000000
+totalFeeAndSubsidy:  21447957294
+confirm:             0
+confirmation required 0
+
+@dash/ConfirmationCountReady
+  + 343151ed499202a551a4bf0ad7b7cfa5571164c58430e17ddeb8d413f0cd22a7
+ready? true
+```
+
+`10000000000 / 21447957294 = 0.46624487`
+
+The fee is so ridiculously large that we don't bother with confirmations, apparently.  
+Okay how does this look with a minimum fee?  
+Actually the fee is only `0.01` for my tx, so where did it get `214.47957294` from?  
+It's the coinbase value of the block.
+
+`dash-cli getblock 2e536618f4e070d6835065b03055f25c56c695e7a83bedefb1804893b1622239`  
+`dash-cli getblock 2e536618f4e070d6835065b03055f25c56c695e7a83bedefb1804893b1622239 2`  
+`dash-cli getrawblock 2e536618f4e070d6835065b03055f25c56c695e7a83bedefb1804893b1622239 2`  
+
+```
+"258ef86e81a7cd3130e97e696bcf1ad5038f2cd1366f8a79c1ba45e4d5358941",
+"b9f29870069e4c4e425f9038cc836c46d6de61589f0f8775084c14c7749729cf",
+"343151ed499202a551a4bf0ad7b7cfa5571164c58430e17ddeb8d413f0cd22a7"
+```
+
+`dash-cli gettransaction 258ef86e81a7cd3130e97e696bcf1ad5038f2cd1366f8a79c1ba45e4d5358941`  
+`dash-cli gettransaction b9f29870069e4c4e425f9038cc836c46d6de61589f0f8775084c14c7749729cf`
+
+`97.37372612 + 117.10584682 = 214.47957294`
+
+Okay there it is.  
+So my transaction was `100 DASH` the block coinbase total was `214.48 DASH` so 
+therefore because my transaction was `100 / 214.48 = 0.47` which as an int is 0,
+we don't need any confirmations. So the transaction size needs to be greater than
+the block coinbase value before it needs confirmations. Does that ever happen?
+
+Alright that's all a bit crazy to me,. I'm going to manually set
+confirmations to be 5, unless we see an instant lock, and see what the
+efficiency of that is:
+
+```
+@dash/GetConfirmationCount
+no transactions = no confirmations
+
+@dash/ConfirmationCountReady
+no tx = ready
+
+@dash/GetConfirmationCount
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+confirmation required 5
+
+@dash/ConfirmationCountReady
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+ready? false
+
+@dash/ConfirmationCountReady
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+ready? false
+
+@dash/ConfirmationCountReady
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+ready? false
+
+@dash/ConfirmationCountReady
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+ready? false
+
+@dash/ConfirmationCountReady
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+ready? false
+
+@dash/ConfirmationCountReady
+  + 035502848ce4323b060cdff1256ce9cbad532fecc6f5ad2bcc70f3bb18a1a51d
+ready? true
+```
+
+The above was me setting a hardcoded confirmation requirement of 5.
+
+```
+@dash/GetConfirmationCount
+block height: 1947
+  + 1c9f482198f64da8f0eea79b23f972102a62c40b4c0c0e3ce437b32bc4c30220
+confirmation required 5
+
+@dash/ConfirmationCountReady
+block height: 1947
+  + 1c9f482198f64da8f0eea79b23f972102a62c40b4c0c0e3ce437b32bc4c30220
+ready? true
+```
+
+That's weird. Went straight to ready.
+
+```
+@dash/GetConfirmationCount
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+confirmation required 5
+
+@dash/ConfirmationCountReady
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+current block height: 2002
+tx block height:      2002
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+current block height: 2003
+tx block height:      2002
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+current block height: 2004
+tx block height:      2002
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+current block height: 2005
+tx block height:      2002
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+current block height: 2006
+tx block height:      2002
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+block height: 2002
+  + 1c6d2a988ab9024816b53010770c8b4260895245ac94ea1c29aa288f37b38d0d
+current block height: 2007
+tx block height:      2002
+confirmations req:    5
+ready:                true
+```
+
+Okay with a bit more logging that's starting to make sense. Right so what I'm
+seeing is, the `GetConfirmationCount` method which tells the bifrost how many
+confirmations to wait for is only called once. I did suspect this. Now the
+question is how best to go about checking that again. Wait let's check the
+chainlock parameter first.
+
+```
+@dash/GetConfirmationCount
+block height: 2083
+  + d81a7c2600fdc4d3dcf66653dc4e408699f83057d506deccd248a67b3720612d
+block chainlocked: true
+
+@dash/ConfirmationCountReady
+block height: 2083
+  + d81a7c2600fdc4d3dcf66653dc4e408699f83057d506deccd248a67b3720612d
+current block height: 2083
+tx block height:      2083
+confirmations req:    0
+ready:                true
+```
+
+Okay that worked as expected. By the time we queried the block, it had been
+chainlocked.
+
+2 in a row. 3. 4. 5. Hmm my private network in regtest is chainlocking these too
+fast. I'll try killing 3/4 dash nodes and then see what happens.
+
+```
+docker stop dash2 dash3 dash4
+```
+
+```
+@dash/GetConfirmationCount
+block height: 670
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+block chainlocked: false
+confirmation required 5
+
+@dash/ConfirmationCountReady
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+current block height: 670
+tx block height:      670
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+current block height: 671
+tx block height:      670
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+current block height: 672
+tx block height:      670
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+current block height: 673
+tx block height:      670
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+current block height: 674
+tx block height:      670
+confirmations req:    5
+ready:                false
+
+@dash/ConfirmationCountReady
+  + bbc9414cded06127141492704247cee6e17f7b28a181bfc17c5749b252f1bc82
+current block height: 675
+tx block height:      670
+confirmations req:    5
+ready:                true
+```
+
+Okay that looks like it's behaving nicely.
+
+Notes:
+- If the chainlock is slow we'll be using confirmation counts
+- The confirmation count will usually be 0 because of the crazy math behind `GetConfirmationCount`
+  (the same way all the other clients calculate this)
+
+Suppose I should test this with outbound transactions too.
+- [ ] test swap with llmq
+- [ ] test swap without llmq
+
+Ah. The midgard docker container can't connect to the thornode instance I'm 
+running bare metal. Of course. Maybe I should do net=host and just use localhost
+to cover both situations?
+
+Setting the `MIDGARD_LISTEN_PORT: 7777` doesn't seem to be making a blind bit of
+difference. https://gitlab.com/thorchain/midgard/-/tree/develop/config/examples
+is lying to me.
+
+Actually it is listening on 7777 but only ipv6. Great.
+
+Using `http://[::1]:7777/` in chrome, still nothing.
+
+https://github.com/docker/for-mac/issues/1432
+> No, it won't work. I just tried. Docker for mac runs in a very special type of
+  separate network which prevents ipv6 from working at alljj.
+
+Midgard is on busybox too so I can't do any `socat` magic. Argh. Why doesn't it
+just bind to ipv4 ffs.
+
+Okay I'm going to rebuild `midgard` with alpine so I can use `socat` to redirect
+ipv4 traffic to ipv6 listen address.
+
+```
+docker build -t registry.gitlab.com/thorchain/midgard:develop .
+docker run -it --rm --name tt --entrypoint sh registry.gitlab.com/thorchain/midgard:develop
+```
+
+### 08.02.2022 Tuesday
+
+So it seems like providing the `entrypoint` in a docker compose file causes the
+default `command` to be ignored. I suppose that makes sense, I was just relying
+on not having to find and copy it.
+
+> On MacOS, --net=host does not work for allowing your container process to
+  connect to your host machine using localhost. Instead, have your container
+  connect to the special MacOS only hostname docker.for.mac.host.internal
+  instead of localhost. No extra parameters are needed to docker run for this
+  to work. You can pass this in as an env var using -e if you want to keep your
+  container platform agnostic. That way you can connect to the host named in
+  the env var and pass docker.for.mac.host.internal on MacOS and localhost on
+  Linux.
+> latest hostname for mac is `host.docker.internal`
+
+> socat[625] E connect(5, AF=10 [0000:0000:0000:0000:0000:0000:0000:0001]:7777, 28): Address not available
+
+```
+pkill socat
+socat TCP4-LISTEN:8080,fork TCP6:[::1]:7777,fork
+socat TCP4-LISTEN:8080,fork TCP4:localhost:7777,fork
+```
+
+OKAY. Midgard, check. Network explorer, check. Lets run a goddamn test already.
+
+- [ ] with llmq  
+TC seems to be having trouble sending the dash tx.
+
+I think this has something to do with the `The specified item could not be
+found in the keyring` error we saw before.
+
+Updating branch to match dev. Think it's triggered by the bifrost sending
+an rpc request. Perhaps MsgSolvency.
+
+Do we get the message on my working cluster? Well, I'm inundated with errors
+now so I can't tell:
+
+```
+{"level":"error","rune in module":0,"rune in pools":0,"time":"2022-02-08T21:08:07Z","message":"cannot migrate with a zero amount"}
+{"level":"error","error":"fail to prepare outbound tx: insufficient funds for outbound request: 0x340b94e5369cEDe551a117960c75547eA84eAEdE 60000000 remaining","time":"2022-02-08T21:08:07Z","message":"fail to schedule refund MKR transaction"}
+{"level":"error","error":"cannot add bond while node is active or ready status: 1 error occurred:\n\t* internal error\n\n","time":"2022-02-08T21:08:19Z","message":"msg bond fail validation"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T21:08:19Z","message":"keeper error"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T21:08:19Z","message":"fail to add fee to reserve"}
+{"level":"error","error":"cannot add bond while node is active or ready status: 1 error occurred:\n\t* internal error\n\n","time":"2022-02-08T21:08:19Z","message":"msg bond fail validation"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T21:08:19Z","message":"keeper error"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T21:08:19Z","message":"fail to add fee to reserve"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T21:08:26Z","message":"msg set version failed validation"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T21:08:26Z","message":"msg set version failed validation"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T21:08:31Z","message":"msg set version failed validation"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T21:08:31Z","message":"msg set version failed validation"}
+```
+
+On and off again? Same thing happened. It's probably the `--gas X` flag now
+being required for every `thornode tx` command. Would love a justification
+for that.
+
+With the flag, we move on to `cannot add bond while node is active or ready...`
+
+Rebuilding the docker image (this time with a version tag)  
+Deleted everything docker. Updated. Rebuilt just one image with specific
+net-version tag. Updated scripts to use this new tag for v0.80.
+
+Is it worth rolling back to 0.79 to double check my cluster scripts? Losing
+faith I haven't messed those up...
+
+Getting `0.72.0` node version logged in genesis from other node. Looks like
+somewhere I'm fetching the old image again.
+
+```
+git pull --tags
+gco v0.79.1
+./_adc/docker-build-image.sh
+THORNODE_IMAGE=registry.gitlab.com/thorchain/thornode:mocknet-0.79.1 ./thornode.sh
+```
+
+Still seeing `0.80.0`. Bit of refining to do here.
+
+`docker run --rm registry.gitlab.com/thorchain/thornode:mocknet-0.79.1 thornode version`
+
+Having a mismatch between `registry.gitlab.com/thorchain` and `/alexdcox`.
+
+```
+docker run --rm registry.gitlab.com/alexdcox/thornode:mocknet-0.79.1 thornode version
+THORNODE_IMAGE=registry.gitlab.com/alexdcox/thornode:mocknet-0.79.1 ./thornode.sh
+```
+
+```
+{"level":"error","error":"vault with pubkey(tthorpub1addwnpepqfrsx4rcnch7m3qd6n6g6y0mmuujjxpjy3nlts2kpzn5cazc5xmtxf54f3p) doesn't exist: vault not found","time":"2022-02-08T23:38:05Z","message":"fail to retrieve vault"}
+{"level":"error","error":"vault with pubkey(tthorpub1addwnpepqtgv8rnpv4nkevjcagmr9ky6v0kasj9h0gzvr4gfk2magqprvl37jnlzv9u) doesn't exist: vault not found","time":"2022-02-08T23:38:05Z","message":"fail to retrieve vault"}
+{"level":"error","error":"vault with pubkey(tthorpub1addwnpepqv3eslzyykkqzrf2zz5yp7pfepur2tyrvsvhd2lu72egdejpuezgcjyzfgp) doesn't exist: vault not found","time":"2022-02-08T23:38:05Z","message":"fail to retrieve vault"}
+{"level":"error","error":"vault with pubkey(tthorpub1addwnpepqdnujur3husklhltj3l0kmmsepn0u68sge0jxg5k550nvdpphxm9s0v7f3v) doesn't exist: vault not found","time":"2022-02-08T23:38:05Z","message":"fail to retrieve vault"}
+{"level":"error","error":"cannot save a pool with an empty asset","time":"2022-02-08T23:38:05Z","message":"fail to save pool"}
+{"level":"error","rune in module":0,"rune in pools":0,"time":"2022-02-08T23:38:05Z","message":"cannot migrate with a zero amount"}
+{"level":"error","error":"vault with pubkey(tthorpub1addwnpepqg65km6vfflrlymsjhrnmn4w58d2d36h977pcu3aqp6dxee2yf88yg0z3v4) doesn't exist: vault not found","pubKey":"tthorpub1addwnpepqg65km6vfflrlymsjhrnmn4w58d2d36h977pcu3aqp6dxee2yf88yg0z3v4","time":"2022-02-08T23:38:05Z","message":"fail to get vault"}
+{"level":"error","chain":"ETH","error":"transaction size can't be zero or negative: 0","time":"2022-02-08T23:38:05Z","message":"network fee is invalid"}
+{"level":"error","chain":"ETH","error":"transaction size can't be zero or negative: 0","time":"2022-02-08T23:38:05Z","message":"network fee is invalid"}
+{"level":"error","error":"fail to prepare outbound tx: insufficient funds for outbound request: 0x340b94e5369cEDe551a117960c75547eA84eAEdE 60000000 remaining","time":"2022-02-08T23:38:05Z","message":"fail to schedule refund MKR transaction"}
+{"level":"error","error":"cannot save a pool with an empty asset","time":"2022-02-08T23:38:05Z","message":"fail to save ETH pool"}
+{"level":"error","error":"thorpub1addwnpepqdr4386mnkqyqzpqlydtat0k82f8xvkfwzh4xtjc84cuaqmwx5vjvgnf6v5 is not bech32 encoded pub key,err : invalid Bech32 prefix; expected tthorpub, got thorpub","time":"2022-02-08T23:38:05Z","message":"fail to parse pub key"}
+{"level":"error","error":"thorpub1addwnpepqdr4386mnkqyqzpqlydtat0k82f8xvkfwzh4xtjc84cuaqmwx5vjvgnf6v5 is not bech32 encoded pub key,err : invalid Bech32 prefix; expected tthorpub, got thorpub","time":"2022-02-08T23:38:05Z","message":"fail to parse pub key"}
+{"level":"error","asset":"ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48 ","error":"invalid symbol","time":"2022-02-08T23:38:05Z","message":"fail to parse asset"}
+{"level":"error","error":"thorpub1addwnpepqdr4386mnkqyqzpqlydtat0k82f8xvkfwzh4xtjc84cuaqmwx5vjvgnf6v5 is not bech32 encoded pub key,err : invalid Bech32 prefix; expected tthorpub, got thorpub","pubkey":"thorpub1addwnpepqdr4386mnkqyqzpqlydtat0k82f8xvkfwzh4xtjc84cuaqmwx5vjvgnf6v5","time":"2022-02-08T23:38:05Z","message":"fail to parse pub key"}
+{"level":"error","error":"thorpub1addwnpepqdr4386mnkqyqzpqlydtat0k82f8xvkfwzh4xtjc84cuaqmwx5vjvgnf6v5 is not bech32 encoded pub key,err : invalid Bech32 prefix; expected tthorpub, got thorpub","pubkey":"thorpub1addwnpepqdr4386mnkqyqzpqlydtat0k82f8xvkfwzh4xtjc84cuaqmwx5vjvgnf6v5","time":"2022-02-08T23:38:05Z","message":"fail to parse pub key"}
+{"level":"error","error":"thorpub1addwnpepqwk8cx4x6jjlsrq6305zs68xtpfcyk3l2k7gp37yqcz0q4g8ar2sz9ms9ur is not bech32 encoded pub key,err : invalid Bech32 prefix; expected tthorpub, got thorpub","time":"2022-02-08T23:38:05Z","message":"fail to parse asgard pub key"}
+{"level":"error","error":"thorpub1addwnpepq0myn4whrj7qfrzc647dju7rgtjc5punucxwvfut56mghuzxakq37e8ev4y is not bech32 encoded pub key,err : invalid Bech32 prefix; expected tthorpub, got thorpub","time":"2022-02-08T23:38:05Z","message":"fail to parse asgard vault public key"}
+{"level":"error","error":"cannot add bond while node is active or ready status: 1 error occurred:\n\t* internal error\n\n","time":"2022-02-08T23:38:15Z","message":"msg bond fail validation"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T23:38:15Z","message":"keeper error"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T23:38:15Z","message":"fail to add fee to reserve"}
+{"level":"error","error":"cannot add bond while node is active or ready status: 1 error occurred:\n\t* internal error\n\n","time":"2022-02-08T23:38:15Z","message":"msg bond fail validation"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T23:38:15Z","message":"keeper error"}
+{"level":"error","error":"KVStore Error: fail to send fee to reserve: 0rune is smaller than 2000000rune: insufficient funds [cosmos/cosmos-sdk@v0.42.1/x/bank/keeper/send.go:193]","time":"2022-02-08T23:38:15Z","message":"fail to add fee to reserve"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T23:38:21Z","message":"msg set version failed validation"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T23:38:21Z","message":"msg set version failed validation"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T23:38:26Z","message":"msg set version failed validation"}
+{"level":"error","error":"not enough bond: unauthorized","time":"2022-02-08T23:38:26Z","message":"msg set version failed validation"}
+```
+
+The same errors on `0.79.1` now. What's changed? Maybe for a while I was
+actually running `0.72.0`? Trying...
+
+```
+THORNODE_IMAGE=registry.gitlab.com/alexdcox/thornode:mocknet-0.72.0 ./thornode.sh
+```
+
+Yep. Both nodes get listed just fine on `0.72.0`. No errors. So my scripts
+need to be updated. 
+
+Lets have a look through the changes and see if anything is obvious.
+
+```
+git difftool 0.72.0..develop
+```
+
+### 09.02.2022 Wednesday
+
+Had a call with `shotonoff` he doesn't want us to copy/fork `btcutil` but just
+use the original. I explained:
+- All the other chain clients do this.
+- Co-dependencies between projecs cause issues (yeah I was vague I did this over a year ago)
+- At some point we need to change function arguments to match paths (also vague, couldn't quite remember what)
+
+So it brought up some questions, naturally.
+1) What's the problem with the circular dependency?  
+   I'm not even sure we need to break it, I just think it's a lot nicer.
+2) Can we just use the original `btcutil`?  
+   I don't think so, but I can't remember why.
+3) A question that came up for me:  
+   What functionality does the thorchain code need to use from `dashd-go` and
+   `dashutil`?
+
+So I'm dedicating today towards explaining what I did and verifying that it was
+a good idea...
+
+-----
+
+Original goals of my PR:
+- **What:** Add chainlock and instantlock struct fields to rpc responses.  
+  **Why:**  So that we can check in client code if a block was chainlocked.  
+  `git cherry-pick -x 14d16e803f88ecb3a1dd943712df051151485da9`
+
+- **What:** Correct chainparams for dash.  
+  **Why:**  So that we can determine dash addresses from keys etc.  
+  `git cherry-pick -x 2496c2f8d921d71989cfeec6d227fdc078c162df`  
+
+- **What:** Bugfix: Remove GetInfo rpc command  
+  **Why:**  It no longer exists on dashd, and there were calls to it that broke required functionality.  
+  `git cherry-pick -x cbaf5b7df028e388275f3b0f2acaebe87ba89f85`
+
+You can do these things without updating/changing import or package paths.
+
+When you import that (JUST the above 3 things) into a new project the following
+happens:
+
+```
+go get github.com/alexdcox/dashd-go@997040ca7d74
+```
+
+```
+go: downloading github.com/alexdcox/dashd-go v0.22.0-beta.0.20220209174856-997040ca7d74
+go get: github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220209174856-997040ca7d74: parsing go.mod:
+  module declares its path as: github.com/dashevo/dashd-go
+          but was required as: github.com/alexdcox/dashd-go
+```
+
+Can we ignore that? I think so, but it ignores go conventions which is why it
+spits out that error.
+
+Okay let's JUST fix that, and see how that cascades into more changes...
+
+(next branch)
+
+```
+git checkout -b alex-test2
+gsed 's+module github.com/dashevo/dashd-go+module github.com/alexdcox/dashd-go+g' -i go.mod
+
+# remove dep on btcd (because it's already this repo why is that there??)
+
+git commit -am "Update module package path to match github url"
+git push --set-upstream origin alex-test2
+```
+
+(back to the demo project)
+
+```
+go get github.com/alexdcox/dashd-go@alex-test2
+go get github.com/alexdcox/dashd-go@702745ae
+```
+
+Fresh new error:
+
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220209180549-98464aecd067/server.go:1352:23: sp.server.syncManager.QueueNotFound undefined (type *netsync.SyncManager has no field or method QueueNotFound)
+
+```
+go get github.com/alexdcox/dashd-go@997040ca
+```
+
+netsync.SyncManager  
+github.com/btcsuite/btcd/netsync
+
+```
+sudo rm -rf ~/go/pkg/mod/cache/download/github.com/alexdcox
+sudo rm -rf ~/go/pkg/mod/github.com/alexdcox
+```
+
+The problem is, even though we've added new struct fields for
+instantlock/chainlock in `dashd-go/btcjson/chainsvrresults.go`, they aren't
+actually returned because the package path is...?
+
+- Update package paths: btcsuite/btcd to dashevo/dashd-go and btcsuite/… 
+
+To add instantlock/chainlock struct fields I have to change ___  
+To use those changes I have to include `github.com/alexdcox/dashd-go`.  
+&nbsp;&nbsp;This is not the package path as defined in `go.mod` (still set to `btcsuite/btcd`)
+
+Wasn't able to spend as much time on this today as I wanted.
+
+### 10.02.2022 Thursday
+
+```
+go test ./...
+```
+> package github.com/alexdcox/dashd-go/database/ffldb  
+>   database/ffldb/db.go:19:2: use of internal package github.com/btcsuite/btcd/database/internal/treap not allowed
+
+I think this was the first argument for changing the pathnames, and the first
+thing I stumbled into when working on this. I wanted to have working tests
+even if that meant commenting out or removing broken ones - to start off on the
+right foot.
+
+```
+go mod init
+go mod edit -replace github.com/dashevo/dashd-go=github.com/alexdcox/dashd-go@997040ca
+go get github.com/alexdcox/dashd-go@997040ca
+```
+
+```
+go clean -modcache
+```
+> go clean -modcache: unlinkat /Users/adc/go/pkg/mod/cache: directory not empty
+
+So reasons for correcting the module paths:
+- It fixes the `module decares its path as` error which prevents `go get`
+- It allows `go test ./...`
+- It follows go conventions
+
+```
+go get -d -v github.com/alexdcox/dashd-go@997040ca
+```
+
+I can't find a way to import a module when the `go.mod` file module path
+doesn't match the `go get` url. Go just doesn't like it. I'm completely blocked
+by the `module decares its path as` error so I'm going to assume I have to at
+least change that.
+
+```
+go get -d -v github.com/alexdcox/dashd-go@1d233169
+```
+
+`go run main.go`
+> \# github.com/alexdcox/dashd-go/rpcclient
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:948:47: undefined: "github.com/btcsuite/btcd/btcjson".CreateWalletResult
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:964:28: undefined: "github.com/btcsuite/btcd/btcjson".CreateWalletCmd
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:1023:71: undefined: "github.com/btcsuite/btcd/btcjson".CreateWalletResult
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:1033:49: undefined: "github.com/btcsuite/btcd/btcjson".GetAddressInfoResult
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:1058:51: undefined: "github.com/btcsuite/btcd/btcjson".GetAddressInfoResult
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:1743:46: undefined: "github.com/btcsuite/btcd/btcjson".GetBalancesResult
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:1770:34: undefined: "github.com/btcsuite/btcd/btcjson".GetBalancesResult
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:2376:45: undefined: "github.com/btcsuite/btcd/btcjson".ImportMultiResults
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:2395:46: undefined: "github.com/btcsuite/btcd/btcjson".ImportMultiRequest
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:2395:83: undefined: "github.com/btcsuite/btcd/btcjson".ImportMultiOptions
+> ../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e/rpcclient/wallet.go:2395:83: too many errors
+
+> go: github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220210235220-1d233169ac3e used for two different module paths (github.com/alexdcox/dashd-go and github.com/btcsuite/btcd)
+
+The codebase has a load of references to:
+`github.com/dashevo/dashd-go/btcjson`
+
+
+```
+replace github.com/dashevo/dashd-go => github.com/alexdcox/dashd-go v0.22.0-beta.0.20220210235220-1d233169ac3e
+```
+
+```
+go mod tidy
+```
+```
+go: finding module for package github.com/alexdcox/dashd-go/rpcclient
+go: found github.com/alexdcox/dashd-go/rpcclient in github.com/alexdcox/dashd-go v0.0.1
+go: github.com/alexdcox/dashd-go@v0.0.1 requires
+  github.com/alexdcox/dashutil@v0.0.1 requires
+  github.com/alexdcox/dashd-go@v0.22.0-beta: parsing go.mod:
+  module declares its path as: github.com/dashevo/dashd-go
+          but was required as: github.com/alexdcox/dashd-go
+```
+
+There's the circular dependency. `dashd-go@v0.0.1` isn't even a thing at the
+moment. I'm going to delete my entire modcache.
+
+```
+sudo rm -rf ~/go/pkg/mod/cache/download/github.com/alexdcox
+sudo rm -rf ~/go/pkg/mod/github.com/alexdcox
+```
+
+```
+git show 1d233169ac3e:go.mod
+```
+
+```
+go run main.go
+```
+```
+../../../../pkg/mod/github.com/btcsuite/btcutil@v1.0.2/address.go:14:2: missing go.sum entry for module providing package github.com/btcsuite/btcd/btcec (imported by github.com/btcsuite/btcutil); to add:
+  go get github.com/btcsuite/btcutil@v1.0.2
+../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220209174856-997040ca7d74/rpcclient/wallet.go:15:2: missing go.sum entry for module providing package github.com/btcsuite/btcd/btcjson (imported by github.com/dashevo/dashd-go/rpcclient); to add:
+  go get github.com/dashevo/dashd-go/rpcclient@v0.22.0-beta
+../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220209174856-997040ca7d74/rpcclient/infrastructure.go:28:2: missing go.sum entry for module providing package github.com/btcsuite/btcd/chaincfg (imported by github.com/dashevo/dashd-go/rpcclient); to add:
+  go get github.com/dashevo/dashd-go/rpcclient@v0.22.0-beta
+../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220209174856-997040ca7d74/rpcclient/chain.go:13:2: missing go.sum entry for module providing package github.com/btcsuite/btcd/chaincfg/chainhash (imported by github.com/dashevo/dashd-go/rpcclient); to add:
+  go get github.com/dashevo/dashd-go/rpcclient@v0.22.0-beta
+../../../../pkg/mod/github.com/alexdcox/dashd-go@v0.22.0-beta.0.20220209174856-997040ca7d74/rpcclient/chain.go:14:2: missing go.sum entry for module providing package github.com/btcsuite/btcd/wire (imported by github.com/dashevo/dashd-go/rpcclient); to add:
+  go get github.com/dashevo/dashd-go/rpcclient@v0.22.0-beta
+```
+
+```
+go get github.com/btcsuite/btcutil@v1.0.2
+go get github.com/dashevo/dashd-go/rpcclient@v0.22.0-beta
+```
+
+With these replace directives I got my demo program running:
+```
+replace github.com/btcsuite/btcd => github.com/dashevo/dashd-go v0.22.0-beta
+replace github.com/dashevo/dashd-go => github.com/alexdcox/dashd-go v0.22.0-beta.0.20220209174856-997040ca7d74
+replace github.com/alexdcox/dashd-go => /Users/adc/go/src/github.com/alexdcox/dashd-go
+```
+
+Now will that actually include the chainlock fields?
+
+> FATA[0000] 405 Method Not Allowed
+
+What method? What's it trying? Not very helpful.
+
+Okay it was defaulting to websocket communication because `HTTPPostMode` wasn't
+set to true. Now it's working. And I got the chainlock field from my repo! Even
+though goland doesn't recognise/follow the replace directive.
+
+Ahh just had to check goland "use go modules" because it didn't detect that like
+it usually does.
+
+Just these two in the project that requires the `dashd-go` repo will allow me
+to use my repo in place of the official one, and omit the package name changes.
+This allows me to test everything in the PR without additional changes. Nice.
+
+```
+replace github.com/btcsuite/btcd => github.com/dashevo/dashd-go v0.22.0-beta
+replace github.com/dashevo/dashd-go => github.com/alexdcox/dashd-go v0.22.0-beta.0.20220209174856-997040ca7d74
+```
+
+Now on to the million dollar question. Is this enough for TC? What are we doing
+in TC and can we just use `btcutil`?
+
+Cleaned up a few other package imports I accidentally changed. New branch
+`thorchain-integration4` with current HEAD commit `d684d129`.
+
+NOTE: You can add the `require` line in go with just the commit and then run
+`go mod tidy` to have go assign the fully qualified `<tag>.<date>-<commit-hash>`
+format that it demands the use of.
+
+Will thornode be able to download `eec5a1af50e4` commit for `dashd-go` now that
+it doesn't exist?
+
+Uses of dashutil in thornode:
+
+```
+dashutil.AmountSatoshi
+```
+
+Just a constant. Probably fine to use `btcutil`, dash subunits are 1e8 major
+units, same as btc.
+
+```
+c.client.GetBlockVerboseTx(hash)
+```
+
+RPC method. Now this goes back to where I was talking about arguments. It's
+actually the return structs/variables that are important, because we need to be
+returning dash specific information which means
+`btcsuite/btcd/btcjson:GetBlockVerboseTxResult`  
+VS  
+`dashevo/dashd-go/btcjson:GetBlockVerboseTxResult`  
+...which means these function signatures have to change.
+
+You might ask: can't we just use go mod replace directives?  
+
+For thorchain, unfortunately not. The `github.com/btcsuite/btcd` package is
+already required so we can't redirect btcd package usage to our package without
+breaking bitcoin.
+
+Therefore, we HAVE to update the package paths in `dashevo/dashd-go`
+
+Okay we have to stop "pretending" to be `btcsuite/btcd`. Can we still use
+`btcutil`. I'll update my thorchain branch to use the new dashevo commit,
+switch over to using that, and see what carnage unfolds...
+
+This is the latest commit on dashd-go as of 10.02.2022
+```
+go get -d github.com/dashevo/dashd-go
+```
+
+TODO: Absolutely MUST switch over to GetBlockTxVerbose because I didn't know
+      that exists at the time.
+
+
+Okay so I went ahead and made some replacements to my thorchain code:
+```
+alexdcox/btcutil   ->   btcsuite/btcutil
+alexdcox/dashd-go  ->   dashevo/dashd-go
+dashutil.          ->   btcutil.
+```
+
+Now we get an error for this method call:
+```
+btcutil.DecodeAddress(sourceAddr.String(), c.getChainCfg())
+```
+
+> Cannot use 'c.getChainCfg()' (type *"github.com/dashevo/dashd-go/chaincfg".Params) as the type *"github.com/btcsuite/btcd/chaincfg".Params
+
+
+This demonstrates the incompatibility between our updated `dashd-go` branch and
+the dash chainparams.Params struct with the `btcutil` package.
+
+So how do we solve that?
+- Write adapters to convert `dashevo/dashd-go/chaincfg.Params` into
+  `btcsuite/btcd/chaincfg.Params`?
+- Fork / recreate the `btcsuite/btcutil` package as `dashutil` with function
+  arguments changed to `dashevo/dashd-go`
+- Modify `dashd-go` and remove all redeclarations of `btcd` structs, so
+  `dashd-go` methods return `btcd` structs, so they can be used with `btcutil`.
+  This could be a lot of work, is it even viable?
+
+All the other bifrost chainclient devs opted for the second. It saves additional
+bloat in the `thorchain` repo (and any other client packages) and requires the
+minimal amount of changes in the `btcd` and `btcutil` clones.
+
+Why don't we just avoid using `DecodeAddress` etc?
+The return value is `btcutil.Address` interface which is an argument to other
+methods in the btcd/dashd-go package such as rpcclient methods
+
+e.g. `ListUnspentMinMaxAddresses(address, chaincfg)`
+
+Also `Address` is needed here: `txscript.PayToAddrScript(addr)` which is a
+bifrost tx parsing package over at this repo:
+`github.com/alexdcox/thorchain-dashd-txscript`
+(eventually `gitlab.com/thorchain/bifrost/dashd-txscript` when it gets approved
+by the TC core team) which currently uses my `dashutil` so we'll need to be
+able to convert both to and from a handful of btcutil structs if we don't clone
+and modify.
+
+`dashd-go-pr-justification`
+Trying to justify changes in dashd-go in the context of thorchain as a requiring project
+
+If we use the default btcutil:
+- need conversion between btcd.Address and dashd-go.Address
+- need conversion between btcd/chaincfg.Params and dashd-go/chaincfg.Params
+
+You know what, I'm going to just try option (3) above and see how it goes. Might
+not be a lot of work...
+
+End of my day. Might not be a lot of work for me but it's already looking like a
+lot to review, which is not good.
+
+Note for tomorrow: you have to run `go get github.com/dashevo/dashd-go` to have
+the latest changes from the aliased repo included.
