@@ -18,7 +18,21 @@ Heimdall requested updates to the Node Launcher, which are done but untested. I'
 going back to that.
 He also requested updates to the smoke tests, which still need to be done.  
 
-Aside from that I'm just keeping the Dash PR updated in alignment with the official develop branch so that it remains valid, ready to be merged after Doge, Terra and Atom.
+Aside from that I'm just keeping the Dash PR updated in alignment with the
+official develop branch so that it remains valid, ready to be merged after
+Doge, Terra and Atom.
+
+**Update: 13th March 2022**
+
+Been blocked by a request from TC devs to replace `github.com/alexdcox`
+dependencies with official channel repos, in this case `github.com/dashevo`.
+This involved putting in a pull-request to have the changes I need merged into
+the official project. Unfortunately, it wasn't maintained in the first place
+and all of the chain specific info still related to bitcoin. My changes updated
+the chain identifiers from bitcoin to dash but this broke many tests. These
+needed to be fixed before maintainers would be happy to include my code, which
+took a lot of extra time. Just waiting for that PR to actually be merged in now
+before I can move on...
 
 **Repositories**  
 <a href="https://gitlab.com/thorchain/thornode" target="_blank">Thorchain Thornode</a>  
@@ -49,6 +63,15 @@ Aside from that I'm just keeping the Dash PR updated in alignment with the offic
 [08.02.2022 Tuesday 7hrs](#08022022-tuesday)  
 [09.02.2022 Wednesday 2hrs](#09022022-wednesday)  
 [10.02.2022 Thursday 7hrs](#10022022-thursday)  
+
+[14.02.2022 Monday 2hrs](#14022022-monday)  
+[24.02.2022 Thursday 1hr](#24022022-thursday)  
+[25.02.2022 Friday 1hr](#25022022-friday)  
+[29.02.2022 Monday 0hrs](#29022022-monday)  
+[01.03.2022 Tuesday 1hr](#01032022-tuesday)  
+[02.03.2022 Wednesday 5hrs](#02032022-wednesday)  
+[04.03.2022 Friday 7hrs](#04032022-friday)  
+[07.03.2022 Monday 1hr](#07032022-monday)  
 
 ### 04.01.2022 Tuesday
 
@@ -2899,3 +2922,421 @@ lot to review, which is not good.
 
 Note for tomorrow: you have to run `go get github.com/dashevo/dashd-go` to have
 the latest changes from the aliased repo included.
+
+### 14.02.2022 Monday
+
+Starting with updating my work log.
+
+Right, so have I done enough to explain things now? Let me try:
+
+- We need to update the module path to prevent `go get` issues in dependant packages.
+- We can't use the `replace` directive because we've forked (and reference) `btcsuite/btcd`, which is also a separate dependency in thorchain.
+- `btcutil` function arguments will not accept `dashd-go` redeclarations
+
+So how do we solve that?
+- Write adapters to convert `dashevo/dashd-go/chaincfg.Params` into
+  `btcsuite/btcd/chaincfg.Params`?
+- Fork / recreate the `btcsuite/btcutil` package as `dashutil` with function
+  arguments changed to `dashevo/dashd-go`
+- Modify `dashd-go` and remove all redeclarations of `btcd` structs, so
+  `dashd-go` methods return `btcd` structs, so they can be used with `btcutil`.
+  This could be a lot of work, is it even viable?
+ 
+I've sent that to `shotonoff`. Switching over to `Decred`
+
+### 24.02.2022 Thursday
+
+Shotonoff has come back with a backport pull request for dashd-go with hopefully
+all the additional corrections we need.
+
+`go test ./...`
+
+> FAIL: TestDashEvoCmds ...
+
+Hangs on/after `github.com/dashevo/dashd-go/peer` for some reason?
+
+Latest commit on `backport-master` is `go get -u github.com/dashevo/dashd-go@backport-master`.
+
+In `thornode` repo:
+`go get -u github.com/dashevo/dashd-go@backport-master`
+
+```
+github.com/dashevo/dashd-go imports
+  github.com/dashevo/dashd-go/btcec/v2/ecdsa: github.com/dashevo/dashd-go/btcec/v2@v2.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+github.com/dashevo/dashd-go imports
+  github.com/dashevo/dashd-go/btcutil: github.com/dashevo/dashd-go/btcutil@v0.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+github.com/dashevo/dashd-go imports
+  github.com/dashevo/dashd-go/btcutil/bloom: github.com/dashevo/dashd-go/btcutil@v0.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+github.com/dashevo/dashd-go imports
+  github.com/dashevo/dashd-go/blockchain imports
+  github.com/dashevo/dashd-go/btcec/v2: github.com/dashevo/dashd-go/btcec/v2@v2.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+github.com/dashevo/dashd-go imports
+  github.com/dashevo/dashd-go/blockchain/indexers imports
+  github.com/dashevo/dashd-go/btcutil/gcs: github.com/dashevo/dashd-go/btcutil@v0.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+github.com/dashevo/dashd-go imports
+  github.com/dashevo/dashd-go/blockchain/indexers imports
+  github.com/dashevo/dashd-go/btcutil/gcs/builder: github.com/dashevo/dashd-go/btcutil@v0.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+```
+
+`go get` not working currently.
+
+1. replace `dashd-go/btcec/v2` with `dashd-go/btcec` because it's a package not a module and therefore we can't use the module major version suffix.
+
+### 25.02.2022 Friday
+
+Looking into shotonof PR still... There's somthing with the module layout that's
+not allowing `go get` perhaps I can help out here...
+
+New repo: github.com/alexdcox/nested-module-demo
+
+Yeah I've messed around with it a bit. It compiles, but `go mod tidy` and
+`go get` won't work because it's not following the go module conventions.
+
+Think we might have to drop the `btcec/v2` submodule. `go get` and `go mod tidy`
+complains at the moment and I'm not sure if there's a way to
+
+### 29.02.2022 Monday
+
+Tried shotonoff's branch `backport-master` again, sent a message for him to have
+a look at.
+
+### 01.03.2022 Tuesday
+
+Mr S wanted me to use his PR as my base. Done did. Balls back in his court...
+
+### 02.03.2022 Wednesday
+
+Shotonoff asked for my changes to be covered by the unit tests. He merged the
+`backport-master` branch into `master` then closed my PR. 
+
+All tests are passing on `master`. Not on my branch. Here we go...
+
+```
+--- FAIL: TestHelp (0.00s)
+    rpcserverhelp_test.go:43: Failed to generate help for method 'getrawtransaction': txrawresult-chainlock
+    rpcserverhelp_test.go:43: Failed to generate help for method 'getblockheader': getblockheaderverboseresult-chainlock
+    rpcserverhelp_test.go:43: Failed to generate help for method 'getblock': getblockverboseresult-chainlock
+```
+
+Okay so this is already becoming a pain. The block data for tests are stored in
+`dat.bz2` files. The blocks are being rejected because the network bytes have
+changed.
+
+Need to do a byte find and replace for:
+```
+3652501241    f9beb4d9    btc mainnet
+              d9b4bef9    <- this was written in my `protocol.go` file, inverted
+to
+3177909439    bf0c6bbd    dash mainnet
+              bd6b0cbf    <- this is what I wrote in `dashd-go/blockchain/protocol.go`
+```
+
+NOTE: You can do this conversion in cyberchef with:
+
+Int to Hex  
+https://gchq.github.io/CyberChef/#recipe=To_Base(16)Swap_endianness('Hex',4,false)Find_/_Replace(%7B'option':'Regex','string':'%20'%7D,'',true,false,false,false)&input=MzY1MjUwMTI0MQ
+
+Hex to Int
+https://gchq.github.io/CyberChef/#recipe=Swap_endianness('Hex',4,true)From_Base(16)&input=ZjliZWI0ZDk
+
+Found in `dashpay/dash` `chainparams.cpp`:
+```c
+pchMessageStart[0] = 0xbf;
+pchMessageStart[1] = 0x0c;
+pchMessageStart[2] = 0x6b;
+pchMessageStart[3] = 0xbd;
+```
+
+So I think I need to update my network bytes anyway, they weren't checked and
+they don't seem to be right. Na they were. Getting a little thrown off by the
+way go reads ints in binary notation as big-endian and binary as little endian
+by default.
+
+It's compressed, so need to uncompress first, then F+R, then compress, then
+overwrite.
+
+Have to do write in 2 steps, write the modified uncompressed dat, then compress
+manually using bzip2 in terminal, as there isn't a bzip2 compression package
+for go.
+
+Awesome, that worked. Moving on...
+
+github.com/dashevo/dashd-go/database/ffldb  
+FAIL TestFailureScenarios  
+> Block doesn't match network: 3652501241 expects MainNet
+
+```
+go test github.com/dashevo/dashd-go/database/ffldb -run TestFailureScenarios
+```
+
+Might have to run my replacer against all of these `find . -name '*.bz2'`...
+
+github.com/dashevo/dashd-go/txscript  
+FAIL: ExamplePayToAddrScript  
+
+```
+go test github.com/dashevo/dashd-go/txscript -run ExamplePayToAddrScript
+```
+
+Okay for this one I'm just going to use a recent dash mainnet transaction.
+txid: `10b0227ab3a1845057c18e2ab06d864f15982bed0e4cc0e7272575f24853d9fb`
+
+Next one:
+
+FAIL: TestElementWire  
+Just needed to change the network bytes again.  
+
+### 03.03.2022 Thursday
+
+Shotonof hasn't got round to merging this yet:  
+https://github.com/dashevo/dashd-go/pull/13/files
+
+### 04.03.2022 Friday
+
+Apparently I need to fix tests. There's more? Need to run: `make unit-cover`
+
+Looks like either my crypto tool isn't generating testnet wif correctly or
+my old dashd-go isn't right...
+
+Interesting, didn't know you can have both uncompressed and compressed wif. The
+funny thing is the compressed wif contains more data than the uncompressed.
+
+Right I'm revising `p2sh` to fix this test:
+
+output:  
+```
+{
+    "result": {
+        "txid": "3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac",
+        "hash": "3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac",
+        "version": 1,
+        "size": 222,
+        "vsize": 222,
+        "weight": 888,
+        "locktime": 0,
+        "vin": [
+            {
+                "txid": "d6f72aab8ff86ff6289842a0424319bf2ddba85dc7c52757912297f948286389",
+                "vout": 0,
+                "scriptSig": {
+                    "asm": "3045022100abbc8a73fe2054480bda3f3281da2d0c51e2841391abd4c09f4f908a2034c18d02205bc9e4d68eafb918f3e9662338647a4419c0de1a650ab8983f1d216e2a31d8e3[ALL] 046f55d7adeff6011c7eac294fe540c57830be80e9355c83869c9260a4b8bf4767a66bacbd70b804dc63d5beeb14180292ad7f3b083372b1d02d7a37dd97ff5c9e",
+                    "hex": "483045022100abbc8a73fe2054480bda3f3281da2d0c51e2841391abd4c09f4f908a2034c18d02205bc9e4d68eafb918f3e9662338647a4419c0de1a650ab8983f1d216e2a31d8e30141046f55d7adeff6011c7eac294fe540c57830be80e9355c83869c9260a4b8bf4767a66bacbd70b804dc63d5beeb14180292ad7f3b083372b1d02d7a37dd97ff5c9e"
+                },
+                "sequence": 4294967295
+            }
+        ],
+        "vout": [
+            {
+                "value": 0.01,
+                "n": 0,
+                "scriptPubKey": {
+                    "asm": "OP_HASH160 f815b036d9bbbce5e9f2a00abd1bf3dc91e95510 OP_EQUAL",
+                    "hex": "a914f815b036d9bbbce5e9f2a00abd1bf3dc91e9551087",
+                    "reqSigs": 1,
+                    "type": "scripthash",
+                    "addresses": [
+                        "3QJmV3qfvL9SuYo34YihAf3sRCW3qSinyC"
+                    ]
+                }
+            }
+        ],
+        "hex": "010000000189632848f99722915727c5c75da8db2dbf194342a0429828f66ff88fab2af7d6000000008b483045022100abbc8a73fe2054480bda3f3281da2d0c51e2841391abd4c09f4f908a2034c18d02205bc9e4d68eafb918f3e9662338647a4419c0de1a650ab8983f1d216e2a31d8e30141046f55d7adeff6011c7eac294fe540c57830be80e9355c83869c9260a4b8bf4767a66bacbd70b804dc63d5beeb14180292ad7f3b083372b1d02d7a37dd97ff5c9effffffff0140420f000000000017a914f815b036d9bbbce5e9f2a00abd1bf3dc91e955108700000000",
+        "blockhash": "000000000000021410ea57495edb671b7feabe29c8fbdee92f0c4f810ba32773",
+        "confirmations": 520637,
+        "time": 1351370614,
+        "blocktime": 1351370614
+    },
+    "error": null,
+    "id": null
+}
+```
+
+input:  
+```
+{
+    "result": {
+        "txid": "837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba",
+        "hash": "837dea37ddc8b1e3ce646f1a656e79bbd8cc7f558ac56a169626d649ebe2a3ba",
+        "version": 1,
+        "size": 436,
+        "vsize": 436,
+        "weight": 1744,
+        "locktime": 0,
+        "vin": [
+            {
+                "txid": "3c9018e8d5615c306d72397f8f5eef44308c98fb576a88e030c25456b4f3a7ac",
+                "vout": 0,
+                "scriptSig": {
+                    "asm": "0 304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d78[ALL] 30440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a4[ALL] 52410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353ae",
+                    "hex": "0048304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d78014730440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a4014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353ae"
+                },
+                "sequence": 4294967295
+            }
+        ],
+        "vout": [
+            {
+                "value": 0.01,
+                "n": 0,
+                "scriptPubKey": {
+                    "asm": "OP_DUP OP_HASH160 ae56b4db13554d321c402db3961187aed1bbed5b OP_EQUALVERIFY OP_CHECKSIG",
+                    "hex": "76a914ae56b4db13554d321c402db3961187aed1bbed5b88ac",
+                    "reqSigs": 1,
+                    "type": "pubkeyhash",
+                    "addresses": [
+                        "1GtpSrGhRGY5kkrNz4RykoqRQoJuG2L6DS"
+                    ]
+                }
+            }
+        ],
+        "hex": "0100000001aca7f3b45654c230e0886a57fb988c3044ef5e8f7f39726d305c61d5e818903c00000000fd5d010048304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d78014730440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a4014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353aeffffffff0140420f00000000001976a914ae56b4db13554d321c402db3961187aed1bbed5b88ac00000000",
+        "blockhash": "000000000000037de995971fdc671426710a5bbedff7e9e283a396c6a16bf674",
+        "confirmations": 520635,
+        "time": 1351371345,
+        "blocktime": 1351371345
+    },
+    "error": null,
+    "id": null
+}
+```
+
+So I'm trying to decode this:
+```
+0048304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d78014730440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a4014cc952410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353ae
+```
+
+And trying to work out where this came from in the test:
+
+```
+52410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353ae
+```
+
+It came from the last part of the full input hex.
+
+```
+docker run \
+  --rm \
+  --name bitcoin \
+  -it \
+  registry.gitlab.com/thorchain/devops/bitcoin-core \
+    -printtoconsole \
+    -txindex \
+    -rpcallowip=0.0.0.0/0 \
+    -rpcbind=0.0.0.0 \
+    -rpcauth=thorchain:d7e53bb9757b6d4fabf87775c7824b5c\$7097e9cde30ef4319ed708fc559267679ae6cc0bf7e18fd49b283650c0c26a10
+```
+
+```
+bitcoin-cli -rpcuser=thorchain -rpcpassword=password decodescript
+```
+
+```
+{
+  "asm": "0 304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d7801 30440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a401 52410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353ae",
+  "type": "nonstandard",
+  "p2sh": "3GA3KSaFH9VosSvCFiMw1a5V8Ao3a4yEm8",
+  "segwit": {
+    "asm": "0 d6dfc0d88d8849dd065ebf9ff3c96f77e87f2018739c817f70d1f9f0dfa25d5f",
+    "hex": "0020d6dfc0d88d8849dd065ebf9ff3c96f77e87f2018739c817f70d1f9f0dfa25d5f",
+    "address": "bc1q6m0upkyd3pya6pj7h70l8jt0wl587gqcwwwgzlms68ulphazt40s05s2w8",
+    "type": "witness_v0_scripthash",
+    "p2sh-segwit": "3NoEjsiB3supBvJb8XFHsCV4S2S9Mo4bkR"
+  }
+}
+```
+
+If you follow the `asm` and put that back into `decodescript` again in parts:
+```
+0
+304502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d0b6ae9de10ebf2da06b1bbdaaba4e50eb078f39e3d7801
+30440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e27038e945bc9db59c732728a383a6f1ed2fb99da7a401
+52410491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f864104865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec687441048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d4621353ae
+```
+
+```
+{
+  "asm": "4502200187af928e9d155c4b1ac9c1c9118153239aba76774f775d7c1f9c3e106ff33c0221008822b0f658edec22274d 6ae9de10ebf2da06b1bbda OP_CODESEPARATOR OP_MAX OP_UNKNOWN [error]",
+  "type": "nonstandard",
+  "p2sh": "3KrgUQwuVJ3pBLk2qQ7aSdr4a1nfknM6n6",
+  "segwit": {
+    "asm": "0 c03e52377ee10169f6d3e05cc641db76168393157b0db03bf269404ef2de4be4",
+    "hex": "0020c03e52377ee10169f6d3e05cc641db76168393157b0db03bf269404ef2de4be4",
+    "address": "bc1qcql9ydm7uyqknaknupwvvswmwctg8yc40vxmqwljd9qyauk7f0jqrwcxmk",
+    "type": "witness_v0_scripthash",
+    "p2sh-segwit": "3JDpdoAF3iiYoRkKTKazWKd4aeaXiAeGXv"
+  }
+}
+```
+
+```
+{
+  "asm": "440220795f0f4f5941a77ae032ecb9e33753788d7eb5cb0c78d805575d6b00a1d9bfed02203e1f4ad9332d1416ae01e2 OP_2OVER [error]",
+  "type": "nonstandard",
+  "p2sh": "36KDmwh6EZFCPBW87SipsWQcR7fodW5foK",
+  "segwit": {
+    "asm": "0 e79e3e29c285256f764f7b8a50a91c2d007d0fa1a52a33499aedca5d2fa1568a",
+    "hex": "0020e79e3e29c285256f764f7b8a50a91c2d007d0fa1a52a33499aedca5d2fa1568a",
+    "address": "bc1qu70ru2wzs5jk7aj00w99p2gu95q86rap554rxjv6ah996tap269q277cyn",
+    "type": "witness_v0_scripthash",
+    "p2sh-segwit": "3Lo7znQVn92e2WRS9Q5CXiPRBAR62XDmHq"
+  }
+}
+```
+
+```
+{
+  "asm": "2 0491bba2510912a5bd37da1fb5b1673010e43d2c6d812c514e91bfa9f2eb129e1c183329db55bd868e209aac2fbc02cb33d98fe74bf23f0c235d6126b1d8334f86 04865c40293a680cb9c020e7b1e106d8c1916d3cef99aa431a56d253e69256dac09ef122b1a986818a7cb624532f062c1d1f8722084861c5c3291ccffef4ec6874 048d2455d2403e08708fc1f556002f1b6cd83f992d085097f9974ab08a28838f07896fbab08f39495e15fa6fad6edbfb1e754e35fa1c7844c41f322a1863d46213 3 OP_CHECKMULTISIG",
+  "type": "multisig",
+  "p2sh": "3QJmV3qfvL9SuYo34YihAf3sRCW3qSinyC"
+}
+```
+
+So we have two `nonstandard/segwit` followed by `multisig`? Perhaps the first
+two leave some important values on the stack? I can't say I fully understand,
+but what I now know is that we're testing specifically the multisig operation
+and ignoring the rest of it.
+
+I can either search the dash ledger for a multisig script, or make one...
+
+I think the search would be faster, even if I do have to write a script to
+acomplish that too....
+
+### 07.03.2022 Monday
+
+Aiming to get these tests completed and pushed today if poss.
+
+Okay my script found this one:  
+`10b2099648910f6a6bc944a7efa528a9e48dd357a2886a4e40a2b6d42f10662e`
+
+But the script hex is just `a914e87bbf09472100125616e21553495f5c17d6cc4a87`
+
+Ah was looking at vout not vin. Turns out that tx does have a 3 script multisig
+in though! Exactly what I'm looking for.
+
+```
+dash-cli decodescript 522102e652b7d4f39cc46150d73987e14f1067a695228e3668fd6eb860fd849461eba1210342d79bccbf0216319d51e58314fc1e66ed47c797afe58f9057e6682540df95112103fd0ac2fbd0f8b182aafc99bf77564562e43e999cc3ef34f671ce1fcc112ac39c53ae
+```
+```
+{
+  "asm": "2 02e652b7d4f39cc46150d73987e14f1067a695228e3668fd6eb860fd849461eba1 0342d79bccbf0216319d51e58314fc1e66ed47c797afe58f9057e6682540df9511 03fd0ac2fbd0f8b182aafc99bf77564562e43e999cc3ef34f671ce1fcc112ac39c 3 OP_CHECKMULTISIG",
+  "reqSigs": 2,
+  "type": "multisig",
+  "addresses": [
+    "Xws719MBRr95AVtY6noVv3tFeCmWHRK2Ex",
+    "Xn3R9nZFR8m2sngBz2BsQB9uwA33U6tkm6",
+    "Xiy94svs9rdskmaL3ANjM7x8xBhAiFrA4q"
+  ],
+  "p2sh": "7iGYJ49wQWsyreaaaH1zQt9qF2eLTYhwdQ"
+}
+```
+
+Need another. Found `4604215e1e9089eb46e407daa07fa30b0296bf8896cbfff13843ba81624cb910`.
+
+Next failing test:  
+```
+go test github.com/dashevo/dashd-go/btcutil/gcs/builder -run TestUseBlockHash
+```
+
+next...
+
+Okay fixed those unit tests and pushed. Sent shotonoff a message to review.  
+Over to decred.  
