@@ -73,6 +73,18 @@ before I can move on...
 [04.03.2022 Friday 7hrs](#04032022-friday)  
 [07.03.2022 Monday 1hr](#07032022-monday)  
 
+[29.03.2022 Tuesday 7hrs](#29032022-tuesday)  
+[20.04.2022 Wednesday 0hrs](#20042022-wednesday)  
+[21.04.2022 Thursday 7hrs](#21042022-thursday)  
+[22.04.2022 Friday 2hrs](#22042022-friday)  
+[27.04.2022 Wednesday 2hrs](#27042022-wednesday)  
+[02.05.2022 Monday 7hrs](#02052022-monday)  
+[03.05.2022 Tuesday 7hrs](#03052022-tuesday)  
+[09.05.2022 Monday 0hrs](#09052022-monday)  
+[10.05.2022 Tuesday 7hrs](#10052022-tuesday)  
+
+
+
 ### 04.01.2022 Tuesday
 
 Having a check-in and seeing if there's anything that needs to be done for the
@@ -3340,3 +3352,536 @@ next...
 
 Okay fixed those unit tests and pushed. Sent shotonoff a message to review.  
 Over to decred.  
+
+### 29.03.2022 Tuesday
+
+Had to focus on some ctx.com stuff there. Have 5 hours on the clock, lets see...
+
+So my dash pr was accepted, now to see if I can refactor my TC PR
+
+Have a `WIP` commit with a TONNE of messy logging. Not sure exactly what I was
+looking for. Lots around:
+- getBlockRequiredConfirmation
+- GetConfirmationCount
+- ConfirmationCountReady
+
+I was bringing dash in-line with BTC/DOGE/BCH etc.  
+Okay pushed that.  
+Now to refactor alexdcox for dashevo...  
+
+> go: finding module for package 
+> gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/dash imports
+>   github.com/dashevo/dashd-go/btcec: module github.com/dashevo/dashd-go@latest found (v0.23.4), but does not contain package github.com/dashevo/dashd-go/btcec
+
+Need to replace these:
+```
+github.com/dashevo/dashd-go/btcec
+github.com/btcsuite/btcd/btcec
+github.com/btcsuite/btcec
+github.com/dashevo/dashd-go/btcec/v2
+```
+
+```
+github.com/alexdcox/dashutil
+github.com/btcsuite/btcutil
+dashutil "github.com/dashevo/dashd-go/btcutil"
+```
+
+Need to update github.com/alexdcox/thorchain-dashd-txscript to use btcutil
+(dashd-go). There was previously a go mod `replace` directive pointing to my
+repo.
+
+As expected, there are numerous places now where we're interacting with the
+`btcec` library and it expects bitcoin chainparams not dashutil chainparams, and
+we haven't reimplemented the btcec library as I recommended, so now we need
+adapters as per my discussion in the first place. The job is half finished.
+
+I'm just going to write chaincfg adapters in my txscript repo.
+
+TBH I'm not really sure why we even need the top when there's the bottom:
+```
+github.com/alexdcox/thorchain-dashd-txscript
+github.com/dashevo/dashd-go/txscript
+```
+
+They seem to be doing pretty much the same stuff. It's just a copypaste.
+
+Should confirm we need the `a9800ac9` commit of dashevo/dashd-go.
+
+```
+go get github.com/dashevo/dashd-go@a9800ac9
+```
+
+`go get github.com/dashevo/dashd-go@a9800ac9`
+> go get: github.com/dashevo/dashd-go@a9800ac9 (v0.0.0-20220315183651-a9800ac93748) requires github.com/dashevo/dashd-go@v0.23.2, not github.com/dashevo/dashd-go@a9800ac9 (v0.0.0-20220315183651-a9800ac93748)
+
+Potential issues with btcec/v2 and txscript in dashd-go:
+- txscript.Signable not found
+- txscript.NewPrivateKeySignable not found
+
+`github.com/dashevo/dashd-go@master(a9800ac9)`
+has a dependency on an older version of itself:
+`github.com/dashevo/dashd-go@v0.23.3`
+which causes package resolution issues when I come to build
+
+I sent `shotonoff` this:  
+https://github.com/alexdcox/dashd-go-usage-attempt
+
+At this point I would recommend breaking the dependency on btcd. We didn't even
+need the backport to begin with.
+
+```
+go get github.com/alexdcox/dashd-go@thorchain-integration3
+```
+
+```
+github.com/dashevo/dashd-go => github.com/alexdcox/dashd-go v0.22.0-beta.0.20220329232951-039daa8159d0
+```
+
+```
+git diff --stat a9800ac9..039daa81
+
+go get github.com/alexdcox/dashd-go/btcec@aa0c9c8a
+
+github.com/dashevo/dashd-go => github.com/alexdcox/dashd-go v0.22.0-beta.0.20220329234754-aa0c9c8a95ec
+
+go get github.com/dashevo/dashd-go
+
+github.com/dashevo/dashd-go/btcec
+github.com/dashevo/dashd-go/btcjson
+github.com/dashevo/dashd-go/btcutil
+github.com/dashevo/dashd-go/chaincfg
+github.com/dashevo/dashd-go/chaincfg/chainhash
+github.com/dashevo/dashd-go/mempool
+github.com/dashevo/dashd-go/rpcclient
+github.com/dashevo/dashd-go/txscript
+github.com/dashevo/dashd-go/wire
+```
+
+So the way I started out with this was reverting, because that's so much easier.
+I should probably just work out how to do things using the new methods,
+wherever they are.
+
+`find . -mindepth 2 -name go.mod -or -name go.sum`
+```
+rm ./btcutil/go.mod
+rm ./btcutil/psbt/go.mod
+rm ./btcec/go.mod
+```
+
+- delete submodules
+- rename package paths for missing `v2` package `btcec`
+```
+github.com/dashevo/dashd-go/btcec/v2
+github.com/dashevo/dashd-go/btcec
+```
+- update main module `go.mod`
+- run `go mod tidy`
+
+
+```
+go get github.com/alexdcox/dashd-go@thorchain-integration5
+```
+
+```
+github.com/dashevo/dashd-go => github.com/alexdcox/dashd-go v0.22.0-beta.0.20220330013947-680511b113d9
+```
+
+Okay problem 1:
+
+There's no longer `txscript.Signable`.
+
+
+
+### 20.04.2022 Wednesday
+
+I'd like to progress, but `dashd-go` isn't right still. Posted in Discord...
+
+Shotonoff's away today.  
+Sam/Quantum's on holiday.  
+
+Daymn.  
+
+
+### 21.04.2022 Thursday
+
+dashd-go `v0.23.5` is now available:  
+`go get github.com/dashevo/dashd-go@v0.23.5`
+
+gitlab.com/thorchain/bifrost/dashd-txscript  
+github.com/alexdcox/thorchain-dashd-txscript  
+
+Shotonoff is forcing me to use btcec v2 with dash, which means I'd have to
+update a load of code I didn't write, which could introduce bugs. Instead I'm
+just going to use the original:
+
+`go get github.com/btcsuite/btcd/btcec`  
+`go get github.com/btcsuite/btcd@v0.22.0-beta`
+
+• Working on my txscript repo
+
+- replace `github.com/alexdcox/dashd-go` with `github.com/dashevo/dashd-go`
+
+- replace `github.com/dashevo/dashd-go/btcec` with `github.com/dashevo/dashd-go/btcec/v2`
+OR
+- replace `github.com/dashevo/dashd-go/btcec` with `github.com/btcsuite/btcd/btcec`
+- `go get github.com/btcsuite/btcd@v0.22.0-beta`
+
+- replace `"github.com/alexdcox/dashutil"` with `dashutil "github.com/dashevo/dashd-go/btcutil"`
+- replace `chaincfg.TestNetParams` with `chaincfg.TestNet3Params`
+
+
+> Cannot use 'pubKey' (type *"github.com/dashevo/dashd-go/btcec/v2".PublicKey) as the type *"github.com/btcsuite/btcd/btcec".PublicKey
+
+
+I'm forced to convert from v2 to v1 btcec PublicKey types in `sign.go` in the
+thorchain txscript library. Thorchain uses btcec v1, the new dashd-go only uses
+v2, so extra work to convert there.
+
+```go
+v1PublicKey, _ := btcec.ParsePubKey(v2PubKey.SerializeCompressed(), btcec.S256())
+
+v1PrivateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), v2PrivateKey.Serialize())
+```
+
+If that works, I'm good.
+
+Okay so why did TC reimplement `txscript` for all chains in the first place?  
+Can I not just use the official one?  
+They were updated to make use of the bifrost `Signable` type, data can be signed
+passing those in instead of btcec.PrivateKey.
+
+Issue is, `v2` removed:  
+`btcec.Signable`  
+`btcec.Signature`  
+
+
+`gitlab.com/thorchain/bifrost/dashd-txscript`
+`go get github.com/alexdcox/thorchain-dashd-txscript@58e1d1d`
+
+```
+gitlab.com/thorchain/bifrost/dashd-txscript => github.com/alexdcox/thorchain-dashd-txscript@v0.0.0-20220422001116-58e1d1d25f3b
+```
+
+```
+dashec "github.com/dashevo/dashd-go/btcec/v2"
+"github.com/btcsuite/btcd/btcec"
+```
+
+Okay updated dashd-txscript. Refactored my thornode branch to use dashevo. Fixed
+broken tests. Merged dev in again. Check tests again. Push.
+
+New stuff:
+- terra
+- bifrost config template needs updating
+  - pprofEnabled
+  - blockScannerBackoff
+  - ethSuggestedFeeVersion
+  - btcParallelMempoolScan
+  - bchParallelMempoolScan
+  - ltcParallelMempoolScan
+  - ltcDisabled
+  - dogeParallelMempoolScan
+  - dogeDisabled
+  - dashParallelMempoolScan
+  - dashDisabled
+  - terraHost
+  - terraDisabled
+  - terraStartBlockHeight
+
+chains using new block scanner backoff:  
+BTC DOGE TERRA LTC BCH ETH  
+all of them. Not BNB. Add DASH o course.  
+
+- [ ] TODO: Test the parsing of environment variables when it comes to creating
+  the bifrost config json.
+- [x] TODO: Refactor the `GetAccount` and `GetAccountByAddress` bifrost client methods.
+
+Dash integration has been on hold until the core Dash team releases a version of
+`dashd-go` 
+
+The Dash core devs pushed a new version `v0.23.5` of their `dashd-go` repo
+yesterday, which contains updates needed to refactor the Dash bifrost client.
+Now the dependency on `github.com/alexdcox/dashd-go` has been replaced with the
+official package `github.com/dashevo/dashd-go`. This was requested during a
+security review and has been the primary blocker for a while.
+
+Now that's out of the way, the Dash merge request is once again ready!
+
+I'll switch back to `node-launcher` and the smoke tests now.
+
+### 22.04.2022 Friday
+
+So Leena asked the typical txout concerns again followed by how much the dash
+bifrost client might have diverged from the others. I'll go through each method
+and see...
+
+`git diff HEAD:bifrost/pkg/chainclients/bitcoin/client.go bifrost/pkg/chainclients/dash/client.go`
+
+- [ ] Is default coinbase value appropriate:
+
+```
+DefaultCoinbaseValue   = 10000
+```
+
+- [x] `currentBlockHeight` is now `*atomic.Int64`
+
+Are there other places with atomic values now?
+
+- [x] Pretty sure we can use the GetRawBlock dash rpc method now.
+
+`c.client.GetBlockVerboseTx`
+
+```go
+rawBlock, err := c.client.RawRequest("getblock", []json.RawMessage{
+  []byte(fmt.Sprintf(`"%s"`, hash.String())),
+  []byte(`2`), // This argument selects verbose block output with transaction data included.
+})
+if err != nil {
+  return
+}
+err = json.Unmarshal(rawBlock, &block)
+```
+
+Update dash client interface functions, switch to atomic values.  
+Pluto said he's going to jump on the review today.  
+Tests are passing.  
+
+Taking to Gavin and Adam from `Nine Realms`?  
+The Desert lynx asked about integrating with the TC fork Maya.  
+
+Reopened the node launcher PR:
+https://gitlab.com/thorchain/devops/node-launcher/-/merge_requests/361
+
+Arranged a call with 9R guys and their dev.
+
+TODO: Need to rebase node launcher with master.
+
+Responded to a question about Dash on other CTXs and dapps:
+
+Hey, I'm definitely not the best person to ask. My focus is pretty concentrated
+on developing CTX.com and currently the TC integration for Dash/Decred so I
+haven't been following general trends lately. There's interest in listing on
+Maya as well as TC but as far as other DEXs go I'm not sure. I've recently
+helped integrate with the DashDirect app, which is continually growing in
+popularity. I defer to the Dash community for other apps
+
+
+### 27.04.2022 Wednesday
+9R Call
+Going to claim at least 2hours for that day
+
+### 02.05.2022 Monday
+
+Following node-launcher recommendations first.  
+`chart.lock` has a checksum in it so I'll probably need to work that out.  
+
+They've switched over to using docker image hashes so need to find that out.  
+
+- [ ] Add `dash-core` aka `dash daemon` to `node-launcher/ci/images`
+- [ ] Update `Chart.lock` node launcher
+- [ ] Set dash image hash in node launcher when possible
+- [ ] Fill out new chain proposal template
+
+So if I'm following correctly, the goal is to move all images from
+`thorchain/devops/*-core` to inside the `node-launcher` repo. All images will
+resolve with the image name
+`registry.gitlab.com/thorchain/devops/node-launcher` but will be differentiated
+by the hash.
+
+```
+docker run \
+  -it \
+  --rm \
+  --name dash-daemon \
+  --entrypoint bash \
+  registry.gitlab.com/thorchain/devops/node-launcher:dash-daemon-$(cat version)
+```
+
+```
+/scripts/entrypoint-mock.sh
+```
+
+```
+--env-file $dir/.env \
+```
+
+Okay going to try and modify my cluster setup script to work with the new dash
+image and to work out what the address should be.
+
+Deffo not the inbound address. Perhaps we can generate using the mnemonics listed
+in `mocknet-30.yaml` in `node-launcher`?
+
+
+```
+docker exec -it thornode1 bash
+thornode keys add temp --recover
+> soldier tank ribbon above result process tide avocado enforce twice myself taste arrow stamp trend hub relax tired monster bone inch steel uphold charge
+thornode keys show temp
+
+NET=mocknet go run ./tools/pubkey2address -p tthorpub1addwnpepqvw0532tjm6skvc7wl02nflv97za4l0zd76z4xvya6935mwku65r5z2p6an
+```
+
+No luck.  
+Trying:
+- infant exchange ripple diet rebuild enact apology erode job throw faculty flight sock october same melt defense cook echo wise tobacco fatal egg nothing
+tthorpub1addwnpepq0lncdjk6c8lnv7znzcwardfx2v55sm4m0kplmuca4fswt6fhv5gqmlg60g
+
+I'm searching for a needle in a haystack here. So I just asked for help and will
+move on to the new chain proposal:
+
+```
+Chain Name:                     dash
+Chain Type:                     UTXO
+Hardware Requirements:          1GB memory, 100GB storage
+Year started:                   2014
+Market Cap:                     USD 960,364,804
+CoinMarketCap Rank:             95
+24hr Volume:                    USD 109,459,640
+Current DEX Integrations:       Atomic DEX
+Other relevant dApps:           DashDirect
+Number of previous hard forks:  17
+```
+
+I don't think Dash is listed on any dex with significant usage.
+
+Getting some fresh new errors trying to start thornode locally:
+
+> Error: error validating genesis file gitlab.com/thorchain/thornode/_adc/.thornode/config/genesis.json: {"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AzE2zPSwVl6Dbqq4AFD3amw3m7hQCNgBLIQEIjUeefWH"} is not bech32 encoded pub key,err : decoding bech32 failed: string not all lowercase or all uppercase
+
+> 8:14PM ERR fail to parse consensus public key error="decoding bech32 failed: string not all lowercase or all uppercase" key=+wFnXcxckuTILF0s+xxSp+r4f8eVfTdwql/HNW5iXjQ=
+panic: decoding bech32 failed: string not all lowercase or all uppercase
+
+So the addresses are not being populated on inbound_addresses because for some
+reason the vault address has not been set. Probably because I'm just running the
+one node here, okay so back to my cluster...
+
+### 03.05.2022 Tuesday
+
+First hour, back to cluster...  
+
+It looks like `add_node_account` now sets a bond amount too along with the ip.  
+Which means I no longer need to send all the node setup commands.  
+
+Sent the revised chain proposal in.
+
+Currently stuck on how to derive this master dash address.  
+Asked for help...  
+
+These are all the mnemonics I can see in the mocknet:
+
+```
+[
+  "soldier tank ribbon above result process tide avocado enforce twice myself taste arrow stamp trend hub relax tired monster bone inch steel uphold charge",
+  "infant exchange ripple diet rebuild enact apology erode job throw faculty flight sock october same melt defense cook echo wise tobacco fatal egg nothing",
+  "edit tenant confirm word debate ginger urge bus cushion normal surface depend film much interest subway august frozen hobby fatal soon shock life message",
+  "noodle deer august stay cradle shrug inform alpha recycle audit tribe pelican payment produce appear region economy annual nut frown sauce much kick warrior",
+  "project pride grant dawn soccer couple snap swing laundry until icon weather because obvious clog often huge whisper unit side suit employ borrow reunion",
+  "what sell bitter enjoy frozen pizza myth pepper garment chapter drill rural globe please clap sing title enroll ladder siren flock donate liberty remove",
+  "original dirt tiny note pledge hint rather code ugly kite rain stamp exile until plate jazz reason nation mom penalty portion glue spring limit",
+  "two almost ball rule lawsuit soon chaos ignore concert proud interest find tissue cram skate gospel damage mountain club review shield anger giant diary",
+  "service junk alone utility pear profit used draw girl rack car cattle hurdle donkey empty shift setup creek grit volume crime spin silk token",
+  "attack payment curious dwarf attack robust purchase trade when report good curtain detail want eagle riot use volume radar lamp spike caution drift mobile",
+  "jacket bachelor fine rookie maid shiver title illegal essay afraid enjoy sauce diesel onion turkey crew record fade analyst romance warrior annual blame furnace",
+  "project point select blur hospital liar galaxy crucial bottom flush fetch faith grief valid retreat drastic fence pepper ivory advance equip hire shallow marble",
+  "emerge transfer spatial electric hint quarter modify matrix bench whip canoe super unveil entry put horse barely canyon poverty quarter police train fuel body",
+  "sign beef glue custom slot jelly identify sheriff magnet click index dove inspire long often spice roof run asset position home nest sausage owner",
+  "sea outside control burden fog reduce nature festival verb type tumble blind entire glimpse chapter claw bid diet lady focus pen ritual effort limit",
+  "blade such habit october danger scare since sister now hurry garden fatal fat animal memory glove volcano start illness express great diary pyramid suffer",
+  "fold argue fever away fame motion goose pond dry chair remain barrel ranch unfold forget fade defy crime history pledge disagree loud ten misery",
+  "floor naive chase erase company arena manage custom rose vintage cute fork peasant latin fork senior equal domain faith grid quarter stage improve student",
+  "sting winter punch floor clinic used alert hurry damp elevator remember retreat absent example rent divorce green wave receive element medal nation myth police",
+  "wolf system range dance vendor across address pink vital about remove steel warrior property clean female fish stairs tent silly setup safe chair picnic",
+  "cupboard wrong drive pepper scrub heavy repeat expire volume legend border poet shell fancy devote crowd crucial section actual connect sure stay honey feature",
+  "term cherry busy blast flock wisdom female manage luxury boat measure place impose light camp arctic lobster dizzy notable capable runway regret message weapon",
+  "drill raccoon mansion suggest base lunar inner industry shoe auto pair melt entry gauge lobster vivid labor pledge another interest parade labor canal domain",
+  "fortune omit message sweet purity page green seed meat dose owner gas citizen cat service neutral dilemma vast enact mixed bonus atom inform floor",
+  "adapt mushroom club noodle win clump door sunset cycle size punch airport favorite broom combine addict aware mixture lucky wage hollow tenant smart final",
+  "surge drive surge vault bottom salad april glad zero evidence short load repeat quick quit chicken nerve fiber cancel merit either air wage buzz",
+  "math girl panic party mention rebel custom tattoo good sunny icon mad couch shaft velvet apology regret end anger iron tiger pottery often hour",
+  "happy bomb flame denial shoe modify bone correct banner mansion gallery answer tobacco sign payment cat avocado vanish immense soap best possible sell patch",
+  "try whale organ balcony bacon noble iron carpet satisfy sunny anger stable innocent render strategy radio best library drum dove blanket kingdom tomato moment",
+  "cruise narrow chest spare wink front swarm food parade bench bid tuna lecture maple report rain bulb badge version small teach fringe shove burden",
+  "punch water dinner hybrid mesh desert mail nominee actual bleak corn dolphin piano dream also collect mule depart refuse chimney input message clump patch",
+  "guilt document tag chief dignity pistol wheel essence damage estate fury endorse happy inherit ankle solution praise toast tuition long toilet long broken illegal"
+]  
+```
+
+`make lint` was suggested for me to test the pipeline, but unfortunately mac
+doesn't support `find` with the `-printf` which is contained in the script.
+
+```
+docker run \
+  -it \
+  --rm \
+  ubuntu bash
+
+apt update
+apt install -y make curl shellcheck golang
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+curl -sS https://webinstall.dev/shfmt | bash
+
+docker commit d68b0016c64a node-launcher-linter
+
+docker run \
+  -it \
+  --rm \
+  -v $(pwd):/mnt \
+  -w /mnt \
+  node-launcher-linter \
+    bash -c "PATH=\"\$PATH:/root/.local/bin\" make lint"
+```
+
+```
+helm dependency build
+```
+
+Build pipeline for node launcher fixed.  
+
+It looks like there's a mismatch between dev intentions and the current state of
+things, as we have all the docker images now contained within `ci/images` with
+the intention of building everything under the `node-launcher` namespace and
+referencing specific nodes by hash (they are also tagged `chain-version` but
+we're using just the hashes for security)
+
+--------------------------------------------------
+
+Hey, so I'm noticing a bit of a disparity between the direction of the repo and
+the current state of things. We're moving all the node images into `ci/images`
+but we're still referencing the old images. Am I right in thinking we will
+eventually make this kind of replacement to all the chains:
+```
+image: registry.gitlab.com/thorchain/devops/bitcoin-core
+WITH
+image: registry.gitlab.com/thorchain/devops/node-launcher:bitcoin-daemon-22.0
+```
+
+Is that going to be added soon?
+
+--------------------------------------------------
+
+Added another comment with my linting docker image steps, floated the idea of
+including it.
+
+
+### 09.05.2022 Monday
+
+Just quickly updated the `node-launcher` PR. 10mins max, not charging for that.  
+Apparently they already have an image for linting.  
+
+### 10.05.2022 Tuesday
+
+I want to see some brutal progress today. First half of the day, commence...
+
+Will start with admin, catching up days. It's a good recap.
+
+Last batch ended 7th March. Going to claim 32hrs plus 7hrs for today, 39hrs.
+(which I'll update at the end of the day)
+
+
+
+
+
+
+
+
