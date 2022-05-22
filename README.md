@@ -82,8 +82,14 @@ before I can move on...
 [03.05.2022 Tuesday 7hrs](#03052022-tuesday)  
 [09.05.2022 Monday 0hrs](#09052022-monday)  
 [10.05.2022 Tuesday 7hrs](#10052022-tuesday)  
-
-
+[11.05.2022 Wednesday 7hrs](#11052022-wednesday)  
+[12.05.2022 Thursday 7hrs](#12052022-thursday)  
+[13.05.2022 Friday 4hrs](#13052022-friday)  
+[17.05.2022 Tuesday 2hrs](#17052022-tuesday)  
+[18.05.2022 Wednedsay 4hrs](#18052022-wednesday)  
+[20.05.2022 Friday 7hrs](#20052022-friday)  
+[21.05.2022 Saturday 3.5hrs](#21052022-saturday)  
+[22.05.2022 Sunday 1hr](#22052022-sunday)  
 
 ### 04.01.2022 Tuesday
 
@@ -3355,7 +3361,7 @@ Over to decred.
 
 ### 29.03.2022 Tuesday
 
-Had to focus on some ctx.com stuff there. Have 5 hours on the clock, lets see...
+Had to focus on some ctx.com stuff there. Where am I?...
 
 So my dash pr was accepted, now to see if I can refactor my TC PR
 
@@ -3668,8 +3674,15 @@ popularity. I defer to the Dash community for other apps
 
 
 ### 27.04.2022 Wednesday
-9R Call
-Going to claim at least 2hours for that day
+
+9R Call  
+
+I didn't make too many notes. Major things are:
+- [ ] Ash to put Dash security review team in contact with 9R
+- [ ] Me to rework txscript extra dependency out of dash bifrost chain client
+- [ ] Me to arrange call to walk through dash client with 9R / secteams / devsA
+- [ ] Answer the question: what is the maximum delay for a chainlock since it was launched?
+- [ ] Set the dash docker image in `node-launcher` after they've run the build.sh
 
 ### 02.05.2022 Monday
 
@@ -3873,13 +3886,1024 @@ Apparently they already have an image for linting.
 
 I want to see some brutal progress today. First half of the day, commence...
 
-Will start with admin, catching up days. It's a good recap.
+Will start with admin, catching up days. It's a good recap.  
+Last batch paid out was 7th March.  
+Need to claim 32hrs up until the start of today.  
 
-Last batch ended 7th March. Going to claim 32hrs plus 7hrs for today, 39hrs.
-(which I'll update at the end of the day)
+Use this script to lint the `node-launcher` (courtesy of Asmund THORSec)
+```
+docker run \
+  --rm \
+  -it \
+  -v $PWD:/repo \
+  registry.gitlab.com/thorchain/devops/node-launcher@sha256:744718ddfad1948dfdb1342670aadf38f25b2472f9c5c56e42c260a4fc051011 \
+    ./scripts/lint.sh
+```
+
+All green. Guess I'll get back to:
+- [x] getting a local cluster running
+- [ ] then completing the final piece of the puzzle, the smoke tests
+- [x] Oh I'll check the thornode dash MR against develop too.
+- [x] I agreed to try refactor thorchain to not use `gitlab.com/thorchain/bifrost/dash-txscript` along with Signer/Signable and just create a wrapper in the dash client.
+
+I'm a little worried about my orchestrator bash shenanagins now. There are lots
+of failed connection attempts and it's breaking things.
+
+Well, that time I got lucky and everything worked.  
+I have 2 thornodes, each bonded with 1 RUNE.  
+Dash inbound address is listed correctly.  
+Let's try a swap...  
+Great success, both BCH->DASH and DASH->BCH seem good.  
+
+Let's take a look at these smoke tests...  
+Added new draft MR for Heimdall AKA smoke tests.  
+Might make more sense to update `thornode` first actually.  
+
+NOTE: I've done the following on special branch `982-add-dash-chain-local-cluster-fixes`:
+Allow transactions with `TransactionSize` and `TransactionFeeRate` `== 0` because
+otherwise the inbound address doesn't get generated on my local cluster. Also, 
+set `AsgardSize` and `MinimumNodesForYggdrasil` `= 2` respectively, so that I
+can test with just 2 thornode docker instances.
+
+There's 6 or so references to `bifrostdashtxscript` which is the package I'd
+like to do without. Luckily, they're ALL in `dash/signer.go`.
+
+--------------------------------------------------
+
+Refactor to remove the external dependency 'thornode/bifrost/dashd-txscript'
+
+If you search the repo for '-txscript' you'll see many of the bifrost chain
+clients currently using external packages at:
+'gitlab.com/thornode/bifrost/<chain>-txscript'
+
+These were originally added along with the 'Signable' interface to facilitate
+either TSS or single private key signing.
+
+This refactor updates the dash client to use a new func
+'RawTxInSignatureUsingSignable' which allows signing using the
+'bifrost/txscript.Signable' interface with the official 'dashd-go/txscript' 
+package, removing the need for 'thornode/bifrost/dashd-txscript'.
+
+--------------------------------------------------
+
+`git checkout develop && git fetch && git pull`
+`git diff 83d0cecc2..515e21ce3 -- ./bifrost`
+
+I was using `Compare With...` in Goland to diff the dash and bitcoin clients.  
+That could be useful when doing the dev/sec walkthrough.  
+Alright dash MR is inline with develop changes.  
+Back to `heimdall` smoke tests.  
+
+What do I need to do/add/update?
+- [ ] ./Dockerfile
+- [ ] ./requirements.txt
+- [ ] ./chains/aliases.py
+- [ ] ./chains/dash.py
+- [ ] ./data/smoke_test_balances.json
+- [ ] ./data/smoke_test_events.json
+- [ ] ./data/smoke_test_transactions.json
+- [ ] ./scripts/smoke.py
+- [ ] ./tests/test_smoke.py
+- [ ] ./thorchain/thorchain.py
+- [ ] ./utils/common.py
+
+Switched back to `thornode` there for a minute as I realised the `./build`
+directory has changed over to reference the `node-launcher`. Guessing that
+happened while they were tackling the removal of the makefile madness, something
+I'm very happy about. Added dash in there.
+
+FYI/FMI AKA NOTE:  
+The dash node launcher image will eventually be at:  
+`registry.gitlab.com/thorchain/devops/node-launcher:dash-daemon-0.17.0.3`
+(as soon as the node launcher maintainers merge dash and rerun `build.sh`)
+
+Argh. There's a python dependency `https://pypi.org/project/python-dogecoin/`
+referenced in `requirements.txt`. No such dash dependency. 
+
+The github forks can be traced back as follows:  
+https://github.com/amiller/bitcoin-python  
+https://github.com/jcsaaddupuy/dogecoin-python  
+https://github.com/bmwant/python-dogecoin  
+
+So in theory, I could do the same for dash. I really don't want to do that.
+
+Well, I'm no python developer, but as far as I can tell, that entire dependency
+for doge is used once, to convert a public key to a p2pkh address string.
+
+```python
+from dogecointx.wallet import P2PKHDogecoinRegtestAddress
+...
+class MockDogecoin(HttpClient):
+  ...
+  def get_address_from_pubkey(cls, pubkey):
+    return str(P2PKHDogecoinRegtestAddress.from_pubkey(pubkey))
+```
+
+Can't find any helpful commands to rebuild the image for local use. Pieced it
+together using the cicd
+
+```bash
+cd build/docker
+DOCKER_BUILDKIT=0 docker build \
+  --build-arg TAG=mocknet \
+  -t gitlab.com/thorchain/thornode:mocknet \
+  -f Dockerfile \
+  ../..
+```
+
+Ahh `Heimdall` docs are a bit behind now. This is no longer appropriate advice:
+
+```bash
+make -C build/docker reset-mocknet-standalone
+```
+
+We need to use the docker compose file:
+
+```bash
+export COMPOSE_PROFILES="mocknet,midgard"
+export COMPOSE_PROJECT_NAME=thorchain
+
+docker compose up -d
+docker compose logs -f thornode bifrost
+docker compose exec thornode sh
+docker compose run /docker/scripts/hard-fork.sh
+docker compose down -v
+```
+
+That is brilliant. Pretty much exactly what I did with my docker compose /
+thornode-cluster repo, except it runs every chain. All we need is to be able to
+disable chains via environment variables and that will be perfect.
+
+Well, there's still a load of errors when you start it up which is extremely
+jarring. I think we should disable vault migrations for non-mainnet or something.
+
+```
+E[2022-05-11 02:36:35,201] HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /v2/pool/BNB.BNB (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fedf405ce80>: Failed to establish a new connection: [Errno 111] Connection refused'))
+E[2022-05-11 02:36:35,201] Smoke tests failed
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connection.py", line 156, in _new_conn
+    conn = connection.create_connection(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/util/connection.py", line 84, in create_connection
+    raise err
+  File "/usr/local/lib/python3.10/site-packages/urllib3/util/connection.py", line 74, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+```
+
+```
+I[2022-05-11 02:39:25,607]  0     MASTER => CONTRIB    [SEED] 10.00000000 BNB.BNB
+I[2022-05-11 02:39:25,621]  1     MASTER => USER-1     [SEED] 26.00000000 BNB.BNB, 1,500.00000000 BNB.LOK-3C0
+I[2022-05-11 02:39:25,633]  2     MASTER => PROVIDER-1 [SEED] 10.00000000 BNB.BNB, 800.00000000 BNB.LOK-3C0
+I[2022-05-11 02:39:25,666]  3     MASTER => PROVIDER-2 [SEED] 2.00000000 BNB.BNB, 100.00000000 BNB.LOK-3C0
+I[2022-05-11 02:39:25,694]  4     MASTER => USER-1     [SEED] 2.00000000 BTC.BTC
+I[2022-05-11 02:39:26,446]  5     MASTER => PROVIDER-1 [SEED] 5.00000000 BTC.BTC
+I[2022-05-11 02:39:26,724]  6     MASTER => USER-1     [SEED] 200.00000000 DOGE.DOGE
+I[2022-05-11 02:39:26,860]  7     MASTER => PROVIDER-1 [SEED] 2,000.00000000 DOGE.DOGE
+I[2022-05-11 02:39:26,972]  8     MASTER => USER-1     [SEED] 500,000.00000000 TERRA.LUNA
+I[2022-05-11 02:39:30,884]  9     MASTER => PROVIDER-1 [SEED] 500,000.00000000 TERRA.LUNA
+I[2022-05-11 02:39:35,854] 10     MASTER => USER-1     [SEED] 500,000.00000000 TERRA.UST
+I[2022-05-11 02:39:40,882] 11     MASTER => PROVIDER-1 [SEED] 500,000.00000000 TERRA.UST
+I[2022-05-11 02:39:45,923] 12     MASTER => PROVIDER-2 [SEED] 5.00000000 BTC.BTC
+I[2022-05-11 02:39:46,969] 13     MASTER => USER-1     [SEED] 2.00000000 BCH.BCH
+I[2022-05-11 02:39:47,154] 14     MASTER => PROVIDER-1 [SEED] 2.00000000 BCH.BCH
+I[2022-05-11 02:39:47,297] 15     MASTER => PROVIDER-2 [SEED] 2.00000000 BCH.BCH
+I[2022-05-11 02:39:47,423] 16     MASTER => USER-1     [SEED] 2.00000000 LTC.LTC
+I[2022-05-11 02:39:47,647] 17     MASTER => PROVIDER-1 [SEED] 2.00000000 LTC.LTC
+I[2022-05-11 02:39:47,924] 18     MASTER => PROVIDER-2 [SEED] 2.00000000 LTC.LTC
+I[2022-05-11 02:39:48,251] 19     MASTER => USER-1     [SEED] 400,000,000,000.00000000 ETH.ETH
+E[2022-05-11 02:39:48,374] {'code': -32000, 'message': 'insufficient funds for gas * price + value'}
+```
+
+Unfortunately, both my first two runs of `make smoke` failed, and I haven't
+changed anything yet. Perhaps I just need to wait a bit longer?
+
+Gets to test `26` again and fails at: `/v2/pool/BNB.BNB`
+
+`http://localhost:6040/p2pid`
+`http://localhost:8080/v2/pool/BNB.BNB`
+
+Switched from using my cluster `github.com/alexdcox/thornode-cluster` to using
+the docker compose in the actual `thornode` repo, added a script simmilar to
+`thornode.sh` to my private scripts `./_adc/docker-compose-mocknet.sh` which
+just loops up/down when I hit the return key.
+
+Need to be sure to set both `mocknet` and `midgard` in profiles or else the
+smoke tests will fail.
+
+Waiting till thorchain block `20` at least.
+
+Oh fuck 😥 Failed at `46` now:
+
+```
+I[2022-05-11 03:19:07,431] 46 PROVIDER-1 => VAULT      [SWAP:BNB.BNB:PROVIDER-1] 0.10000000 BTC/BTC
+E[2022-05-11 03:19:53,240] Midgard   [BNB.BNB        ] RUNE  [T]964.88003016 != [M]918.42871797 [DIFF] 4.93295% (4,645,131,219)
+E[2022-05-11 03:19:53,240] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 136, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 646, in run
+    self.run_health()
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 311, in wrapped_f
+    return self.call(f, *args, **kw)
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 391, in call
+    do = self.iter(retry_state=retry_state)
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 350, in iter
+    raise retry_exc.reraise()
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 168, in reraise
+    raise self.last_attempt.result()
+  File "/usr/local/lib/python3.10/concurrent/futures/_base.py", line 439, in result
+    return self.__get_result()
+  File "/usr/local/lib/python3.10/concurrent/futures/_base.py", line 391, in __get_result
+    raise self._exception
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 394, in call
+    result = fn(*args, **kwargs)
+  File "/app/scripts/smoke.py", line 372, in run_health
+    self.health.run()
+  File "/app/scripts/health.py", line 95, in run
+    self.check_pools()
+  File "/app/scripts/health.py", line 153, in check_pools
+    self.error(
+  File "/app/scripts/health.py", line 105, in error
+    raise Exception(err)
+Exception: Midgard   [BNB.BNB        ] RUNE  [T]964.88003016 != [M]918.42871797 [DIFF] 4.93295% (4,645,131,219)
+make: *** [smoke] Error 1
+```
+
+I have a sneaky suspicion this is actually just because my lappy is old and slow
+and the smoke tests don't retry if it gets a 200 response but with incorrect
+values. All guesswork o course.
+
+Hmmm. I'll try again. Closed some non-essential apps and some project windows...
+
+Failed at `41`.  
+Again. Closing everything, even this note... brb...  
+Got all the way to `90` that time. Hmm. Maybe I should run this on my other pc.
+
+Running linux in a new virtualbox instance and setting it up...
+
+### 11.05.2022 Wednesday
+
+Finished setting up ubuntu server with all the prerequisites.  
+Now on to actually testing.  
+
+- `mkdir /go/src`
+- clone `thornode`, `heimdall`, `node-launcher`
+- add my forks as git origins, switch to dash branches
+- run (modified - no dockerhub) `./ci/images/build.sh`
+
+Notes while doing the above:
+- might be nice to update `ci/images/build.sh` to not use dockerhub and just build the images locally, perhaps hub push can be a separate script
+
+Getting some werid docker crazyness
+> unable to prepare context: unable to evaluate symlinks in Dockerfile path: lstat /var/lib/snapd/void/Dockerfile: no such file or directory
+
+Had to uninstall docker snap and install via apt instead.
+
+```bash
+cd /go/src/gitlab.com/thorchain/thornode
+cd /go/src/gitlab.com/thorchain/devops/node-launcher
+cd /go/src/gitlab.com/thorchain/heimdall
+```
+
+```bash
+export COMPOSE_PROFILES="mocknet,midgard"
+export COMPOSE_PROJECT_NAME=thorchain
+```
+
+```bash
+while true; do
+  docker-compose up --remove-orphans -d
+  echo -n "Press enter to STOP thorchain..."
+  read ignored
+
+  docker-compose down --volumes
+  echo -n "Press enter to RESTART thorchain..."
+  read ignored
+done
+```
+
+```bash
+docker-compose logs -f thornode bifrost
+
+make smoke
+```
+
+Is it possible we'll set a new high score?
+
+Bear in mind, these are now running on a 16GB/4-core vm with an nvme drive. If
+this doesn't pan out, the tests definitely need some work.
+
+`96`! 🚨🔥🧨
+
+The whole thing takes quite a while though. 20mins so far and reached `110`.
+
+`119` and DONE!!! Yesss. 23 minutes.
+
+Now to do all that with Dash added to `heimdall`.
+- [x] ./Dockerfile (going to try and avoid the need for python-dash)
+- [x] ./requirements.txt (skip, same reason)
+- [x] ./chains/aliases.py
+- [ ] ./chains/dash.py
+- [ ] ./data/smoke_test_balances.json
+- [ ] ./data/smoke_test_events.json
+- [ ] ./data/smoke_test_transactions.json
+- [ ] ./scripts/smoke.py
+- [ ] ./tests/test_smoke.py
+- [ ] ./thorchain/thorchain.py
+- [ ] ./utils/common.py
+
+Is it possible to convert from `Bech32PrefixAccAddr` node account address
+to a p2pkh address?
 
 
+```bash
+NET=mocknet go run ./tools/pubkey2address -p tthorpub1addwnpepqvw0532tjm6skvc7wl02nflv97za4l0zd76z4xvya6935mwku65r5z2p6an
+```
 
+tthor is the address prefix
+tthorpub is the public key prefix
+
+I always forget the process to replace a dependency with an alias, so here it is:
+1. Try and get the replacement package specifying an exact commit. This will fail,
+  because the url will point to a forked package with the original package name. That's ok.
+2. Use the output of that to add the `go.mod` `replace` directive.
+3. `go get` the original package (which will silently fetch the new/replacement package instead)
+
+```
+go get -v gitlab.com/alexdcox/thornode@1aa57d788
+gitlab.com/thorchain/thornode => gitlab.com/alexdcox/thornode v0.68.1-0.20220511214941-1aa57d7887b0
+go get gitlab.com/thorchain/thornode
+```
+
+Morale of the story, don't use branch names!
+
+```
+master
+priv: ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2
+pub:  02b4632d08485ff1df2db55b9dafd23347d1c47a457072a1e87be26896549a8737
+eth:  0x3fd2d4ce97b082d4bce3f9fee2a3d60668d2f473
+bnb:  bnb1j08ys4ct2hzzc2hcz6h2hgrvlmsjynawtf2n0y
+btc:  bc1qj08ys4ct2hzzc2hcz6h2hgrvlmsjynawlht528
+ltc:  ltc1qj08ys4ct2hzzc2hcz6h2hgrvlmsjynawmt3sjh
+bch:  qzfuujzhpd2ugtp2lqt2a2aqdnlwzgj04cswjhml4x
+dash: XpANHDZNTgEyM2FN8QjERafkRaK4X8Uaeq
+doge: DJcczDr7oNvfj5qP17Qa7p9ZUNTfnYYDJC
+
+contrib
+priv: 289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032
+pub:  037db227d7094ce215c3a0f57e1bcc732551fe351f94249471934567e0f5dc1bf7
+eth:  0x970e8128ab834e8eac17ab8e3812f010678cf791
+bnb:  bnb1zupk5lmc84r2dh738a9g3zscavannjy3nkkcrl
+btc:  bc1qzupk5lmc84r2dh738a9g3zscavannjy38ghlxu
+ltc:  ltc1qzupk5lmc84r2dh738a9g3zscavannjy3r5dm7v
+bch:  qqtsx6nl0q75dfkl6yl54zy2rr4nkwwgjyzgwf5228
+dash: XcnXU1m6d1pkoCd17SgknUdgV1dbPvBrcU
+doge: D7EnB23qxiWTBGD1z9N6Ui7VXonCgY9eeE
+
+user1
+priv: e810f1d7d6691b4a7a73476f3543bd87d601f9a53e7faf670eac2c5b517d83bf
+pub:  03f98464e8d3fc8e275e34c6f8dc9b99aa244e37b0d695d0dfb8884712ed6d4d35
+eth:  0xf6da288748ec4c77642f6c5543717539b3ae001b
+bnb:  bnb1qqnde7kqe5sf96j6zf8jpzwr44dh4gkddg5yfw
+btc:  bc1qqqnde7kqe5sf96j6zf8jpzwr44dh4gkdek4rvd
+ltc:  ltc1qqqnde7kqe5sf96j6zf8jpzwr44dh4gkda2085a
+bch:  qqqzdh86crxjpyh2tgfy7gyfcwk4k74ze522f8panm
+dash: XahePWt94WHuFrfABrfAaqDKZWvqEjuqVV
+doge: D59u6XAtQCybdvFB4ZLWH4h8cK5SY8show
+
+provider1
+priv: a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330
+pub:  02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c
+eth:  0xfabb9cc6ec839b1214bb11c53377a56a6ed81762
+bnb:  bnb10s4mg25tu6termrk8egltfyme4q7sg3hm84ayj
+btc:  bc1q0s4mg25tu6termrk8egltfyme4q7sg3h0e56p3
+ltc:  ltc1q0s4mg25tu6termrk8egltfyme4q7sg3ht9w7ep
+bch:  qp7zhdp230nf0y0vwcl9radyn0x5r6pzxuqvhx5vs3
+dash: Xn1PydbxxPrTHq4heBc2jr81gQ9qcdUp1X
+doge: DGTegdtiJ6Y9fteiWtHNS5bpjCJSrY4Kiz
+
+provider2
+priv: 9294f4d108465fd293f7fe299e6923ef71a77f2cb1eb6d4394839c64ec25d5c0
+pub:  0238383ee4d60176d27cf46f0863bfc6aea624fe9bfc7f4273cc5136d9eb483e4a
+eth:  0x1f30a82340f08177aba70e6f48054917c74d7d38
+bnb:  bnb1jw8h4l3dtz5xxc7uyh5ys70qkezspgfuh4nh0z
+btc:  bc1qjw8h4l3dtz5xxc7uyh5ys70qkezspgfurtjs2p
+ltc:  ltc1qjw8h4l3dtz5xxc7uyh5ys70qkezspgfu8hg5j3
+bch:  qzfc77h794v2scmrmsj7sjreuzmy2q9p8sxs8lu34e
+dash: Xp953eZGiFzHfr5wHuA9DBTzxS37JMNykT
+doge: DJbKker23xfz3ufxAbqUuQwp1EBibGJJHu
+```
+
+Can you run the smoke tests against a subset?
+
+```bash
+docker run \
+  -it \
+  --network=host \
+  --rm \
+  -e RUNE=THOR.RUNE \
+  -e LOGLEVEL=INFO \
+  -e PYTHONPATH=/app \
+  -e BLOCK_SCANNER_BACKOFF=0.8s \
+  -v $(pwd):/app \
+  -w /app \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --fast-fail=True
+```
+
+```
+logging.info(f"--> {pubkey.hex()}")
+logging.info(f"<-- {str(P2PKHDogecoinRegtestAddress.from_pubkey(pubkey))}")
+```
+
+This is the output for doge (before it fails):
+> I[2022-05-11 23:48:53,589] --> 026fa0929eba67e7fbe28eb500e530addf8c37b40aaa2ac5cc286e51919c2d76fc
+  I[2022-05-11 23:48:53,590] <-- n33GAjMrho9Bd6pz11e1Ea1vhUvrDcQik8
+
+Need to do this conversion for dash without a library.
+
+public key bytes uncompressed -> sha256 -> ripemd160 = pkhash  
+(0x4c + pkhash) = netpkhash  
+netpkhash -> sha256 -> sha256 -> last4 = checksum  
+(netpkhash + checksum) -> base58 = p2pkh address  
+
+Am I going to have to make this for dash?  
+`https://gitlab.com/thorchain/bifrost/python-dogecointx`  
+
+I'll try...
+`https://gitlab.com/alexdcox/python-dash`  
+
+Need to populate these values:
+
+- P2SHDashAddress
+- P2SHDashLegacyAddress
+- P2SHDashTestnetAddress
+- P2SHDashTestnetLegacyAddress
+- P2SHDashRegtestAddress
+- P2SHDashRegtestLegacyAddress
+- P2PKHDashAddress
+- P2PKHDashTestnetAddress
+- P2PKHDashRegtestAddress
+- CDashKey
+- CDashTestnetKey
+- CDashRegtestKey
+- CDashExtPubKey
+- CDashExtKey
+- CDashTestnetExtPubKey
+- CDashTestnetExtKey
+- CDashRegtestExtPubKey
+- CDashRegtestExtKey
+
+Ooooooooooooooooooooooot of time.
+
+### 12.05.2022 Thursday
+
+- [x] Follow `thornode` merge reques comments/suggestions from `Eridanus`...
+- [ ] Fix `thornode` pipeline
+  - [ ] gosec-sast
+
+    ```
+    go install github.com/securego/gosec/v2/cmd/gosec@latest
+    gosec ./...
+    ```
+
+    It shows 2 issues with my stuff and 5 issues with other things.  
+    `Eridanus` said he'd take a look tomorrow.  
+    I'll just sort the dash issues if I can...  
+
+  - [x] lint
+
+    `make lint`
+
+    > xargs: gofumpt: No such file or directory
+    
+    `go install mvdan.cc/gofumpt@latest`
+
+    > make: trunk: No such file or directory
+    
+    `brew install trunk`
+
+    > error: Found argument 'check' which wasn't expected, or isn't valid in this context
+    
+    Wrong trunk.
+
+    `curl https://get.trunk.io -fsSL | bash`
+
+    Okay it doesn't like the way I did the bifrost config with handlebar style templates.
+    Fair enough. I'll switch to jq and json path updates.
+
+    The linter is absurdly strict in some cases. It doesn't like arrays with one
+    value spanning multiple lines:
+
+    ```json
+    "addresses": [
+      "XoSxpd5VYNQvKbXbEaDKt6P1aZANzAkXrJ"
+    ]
+    ```
+
+    Has to be:
+
+    ```json
+    "addresses": ["XoSxpd5VYNQvKbXbEaDKt6P1aZANzAkXrJ"]
+    ```
+
+    ...or it fails the lint check and the build pipeline fails. This is a bit
+       ridiculous, especially seeing as my format is how the dash-cli response
+       is actually returned.
+
+    How to improve the linter IMO:
+    - Allow array blocks to span any x lines
+    - Don't enfore json files to end with a single empty line
+  
+    Well, you can `cd` and run `trunk fmt` so at least there's that.
+
+  - [ ] secret_detection
+
+  ```
+  brew install gitlab-runner
+  brew services start gitlab-runner
+  gitlab-runner install
+  gitlab-runner start
+
+  gitlab-runner exec docker lint
+  gitlab-runner exec docker unit-tests
+  gitlab-runner exec docker smoke-test
+  ```
+
+  No lappy space left ><
+  
+
+### 13.05.2022 Friday
+
+- [ ] Fix `thornode` pipeline
+  - [x] secret_detection
+
+  I'm thinking I should probably run this on the Ubuntu vm rather than my laptop
+  seeing as it couldn't handle running `make lint` directly and the gitlab
+  runner involves nested vms.
+
+  ```bash
+  curl -LJO "https://gitlab-runner-downloads.s3.amazonaws.com/latest/deb/gitlab-runner_amd64.deb"
+  dpkg -i gitlab-runner_amd64.deb
+  sudo gitlab-runner start
+
+  gitlab-runner exec docker lint
+  ```
+
+  It runs this:
+  ```bash
+  trunk check --no-progress --monitor=false --upstream origin/develop
+  ```
+
+  The `--upstream` flag is a bit worrying, i'm not using `origin` but `alex` and
+  I'm on branch `982-add-dash-chain` not `develop`.
+
+  Also that doesn't log any progress to the stdout which is a pretty horrible
+  user experience, just looks like it's hanging for ages.
+
+  ```bash
+  trunk check --upstream origin/develop
+  ```
+
+  ```bash
+  gitlab-runner exec docker secret_detection
+  ```
+
+  > FATAL: missing 'script' for job
+
+  `/etc/gitlab-runner/config.toml`
+
+  ```bash
+  gitlab-runner run test
+  ```
+
+  Okay took me a while, but the `github-runner` doesn't support running
+  everything, as would be the case when a commit is pushed to a new branch.
+  Also, it doesn't support "secret variables" which I'm assuming is this
+  secret_detection step.
+
+  - [x] unit-tests
+
+  ```bash
+  gitlab-runner exec docker unit-tests
+  ```
+
+  Out of space. Hmm. Had to follow this guide because ubuntu installed and only
+  used 50% of the disk space:  
+  https://askubuntu.com/questions/1106795/ubuntu-server-18-04-lvm-out-of-space-with-improper-default-partitioning
+
+
+  ```bash
+  make test-coverage-sum
+  ```
+
+  Beaut. All green.
+
+  - [x] semgrep
+
+  ```
+  gitlab-runner exec docker semgrep
+  ```
+
+  We're done here.
+
+```
+gitlab-runner exec docker smoke-test
+```
+
+- [x] ./Dockerfile (going to try and avoid the need for python-dash)
+- [x] ./requirements.txt (skip, same reason)
+- [x] ./chains/aliases.py
+- [ ] ./chains/dash.py
+
+- [ ] ./data/smoke_test_balances.json
+- [ ] ./data/smoke_test_events.json
+- [ ] ./data/smoke_test_transactions.json
+
+- [x] ./scripts/smoke.py
+- [x] ./tests/test_smoke.py
+- [x] ./thorchain/thorchain.py (NEED TO CONFIRM SOME FIGURES, SEARCH TODO)
+- [x] ./utils/common.py
+
+It looks like this: https://medium.com/free-code-camp/how-to-create-a-bitcoin-wallet-address-from-a-private-key-eca3ddd9c05f
+is exactly what I'm looking for with regard to `get_address_from_pubkey`.
+
+https://github.com/Destiner/blocksmith/blob/master/blocksmith/bitcoin.py#L48
+
+```python
+def __public_to_address(public_key):
+    public_key_bytes = codecs.decode(public_key, 'hex')
+    # Run SHA256 for the public key
+    sha256_bpk = hashlib.sha256(public_key_bytes)
+    sha256_bpk_digest = sha256_bpk.digest()
+    # Run ripemd160 for the SHA256
+    ripemd160_bpk = hashlib.new('ripemd160')
+    ripemd160_bpk.update(sha256_bpk_digest)
+    ripemd160_bpk_digest = ripemd160_bpk.digest()
+    ripemd160_bpk_hex = codecs.encode(ripemd160_bpk_digest, 'hex')
+    # Add network byte
+    network_byte = b'00'
+    network_bitcoin_public_key = network_byte + ripemd160_bpk_hex
+    network_bitcoin_public_key_bytes = codecs.decode(network_bitcoin_public_key, 'hex')
+    # Double SHA256 to get checksum
+    sha256_nbpk = hashlib.sha256(network_bitcoin_public_key_bytes)
+    sha256_nbpk_digest = sha256_nbpk.digest()
+    sha256_2_nbpk = hashlib.sha256(sha256_nbpk_digest)
+    sha256_2_nbpk_digest = sha256_2_nbpk.digest()
+    sha256_2_hex = codecs.encode(sha256_2_nbpk_digest, 'hex')
+    checksum = sha256_2_hex[:8]
+    # Concatenate public key and checksum to get the address
+    address_hex = (network_bitcoin_public_key + checksum).decode('utf-8')
+    wallet = base58(address_hex)
+    return wallet
+
+def base58(address_hex):
+    alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+    b58_string = ''
+    # Get the number of leading zeros and convert hex to decimal
+    leading_zeros = len(address_hex) - len(address_hex.lstrip('0'))
+    # Convert hex to decimal
+    address_int = int(address_hex, 16)
+    # Append digits to the start of string
+    while address_int > 0:
+        digit = address_int % 58
+        digit_char = alphabet[digit]
+        b58_string = digit_char + b58_string
+        address_int //= 58
+    # Add '1' for each 2 leading zeros
+    ones = leading_zeros // 2
+    for one in range(ones):
+        b58_string = '1' + b58_string
+    return b58_string
+```
+
+### 17.05.2022 Tuesday
+
+On with trying to get the python pubkey to address code working...
+
+```
+Network Agnostic
+private hex (32 bytes):              c03d33d24a4f01109233fe76c247dfe8d80e15416e15d83960636dd2b016f237
+public uncompressed hex (65 bytes):  0429277cdf6c0ee28124c8c68b03675582b6fc4ee4e09944c816ace1b8469626d257bf607aab190cb7f01a3d76b96f8d405b6f593bdb487c3c2a3fb89f3d5bd455
+public compressed hex (33 bytes):    0329277cdf6c0ee28124c8c68b03675582b6fc4ee4e09944c816ace1b8469626d2
+public s256:                         cf965936a64376b30f709f3a28852369cd7ee90c22c35b28451f431b199a7a76
+public ripemd160 hash:               7941ed2d195d32afcd0632fe1482b3d576d39711
+
+Testnet / Regtest
+private wif (uncompressed): 933aenYLSA25ppgaAg4YtU7QgZcUx396ZNStAdEBMPkq1A47r3m
+private wif (compressed):   cU2PXn1Jn2onJ5TfPhQfkAfHXcwcMvSjXsfEqUuAh1SSsLfaUJ5s
+p2pkh:              yXNbb4n4XefV5FtrhsoXEwRF9nqvKrVpH4
+txscript p2pkh asm: OP_DUP OP_HASH160 7941ed2d195d32afcd0632fe1482b3d576d39711 OP_EQUALVERIFY OP_CHECKSIG:
+txscript p2pkh hex: 76a9147941ed2d195d32afcd0632fe1482b3d576d3971188ac
+p2sh:               1P6oz3gjgxfcMuGUacvMdeSy7PAgfVFXsi
+
+checksum  
+expected: c982672f  
+actual:   7311cbf9  
+```
+
+### 18.05.2022 Wednesday
+
+Okay wasn't using the python byte format correctly. Needed to be `b'\x8c'`
+rather than `b'76'` (attempting to set in base 10 didn't work). Also wasn't
+using the pubkey hash for the address data, but the raw bytes. Oops.
+
+Now that's out the way I have a working (presumably) `dash.py` file. Just need
+to add dash tx data now. 
+
+- [x] ./data/smoke_test_transactions.json
+  Transactions:
+  - [x] Seed
+  - [x] Vault Add
+  - [x] Swap
+  - [x] Vault Withdrawal
+
+- [x] ./data/smoke_test_events.json
+
+- [ ] ./data/smoke_test_balances.json
+
+Enable DASH txs in smoke tests
+
+> /docker/scripts/bifrost.sh: no such file or directory
+
+Finding it difficult to debug this because the volume seems to be mounted
+correctly and I can't freeze the  container with `tail -f /dev/null` because
+the image
+`registry.gitlab.com/thorchain/thornode:runner-base-v1@sha256:8fc433efa3e853b59cafe920654705e37c94228ae99cba6892933a61594c11f3`
+doesn't even have `bash`, let alone `tail`.
+
+I'll try `sleep 999999999`
+
+> bifrost_1       | /bin/sleep: line 1: ELF: not found
+> bifrost_1       | /bin/sleep: line 2: P: not found
+> bifrost_1       | /bin/sleep: line 3: P: not found
+> bifrost_1       | /bin/sleep: line 6: syntax error: unterminated quoted string
+
+Managed to get into the container with:
+
+```bash
+entrypoint: /bin/sh
+command: ["-c", "apk update && apk add bash coreutils && /usr/bin/tail -F /dev/null"]
+```
+
+> parse error: Invalid numeric literal at line 10, column 36
+
+Getting this in the bifrost log. No idea why.
+
+### 20.05.2022 Friday
+
+Right, can I get the smoke tests done?
+
+Noticed notes on node-launcher, updated MR.
+
+That was it, having an issue with the `bifrost.sh`. Quick google of the error
+and it seems like that's coming from `jq`. Let's dump the output...
+
+I was using an outdated docker image for bifrost, which still had handlebar
+template format for `/scripts/bifrost-config-template.json` and therefore didn't
+parse with jq. Rebuilt container.
+
+Message from Asmund THORSec:
+
+> Thank you for the contribution, and the iterations on it. This is ready to
+  merge (pending the rest of the approvals)
+
+WOOP WOOP 🚨 That's the sound of the beast.
+
+Okay so now bifrost is exiting with code 0. Very odd. Last log message is:
+> Checking if THORNode Thor 'thorchain' account exists
+
+Ahh I deleted the `exec "@?"` thingy at the end of the bifrost entrypoint script
+as well as the `command` in `docker-compose`, to match thornode. Needed to
+append the bifrost command to the script.
+
+Running the smoke tests again... Python error:
+
+> ValueError: Unknown chain 'dash/regtest'
+
+Damn. I think there's some python magic going on here. Looks like a "magic" init
+file here: `dogecointx/__init__.py` that I'm guessing is loaded when that
+dependency is imported. It sets the `dogecoin/{mainnet,testnet,regtest}` params.
+
+Hmm.. I Really didn't want another dependency but I feel like I don't have much
+choice. They  didn't need to do this with Terra because there's a python sdk.
+
+Double checked if `dashpay` official github has any python repos. It does, but
+they're old and don't seem particularly relevant.
+
+On with https://gitlab.com/alexdcox/python-dashtx then it seems. Yet another
+repo to (create, modify, get approved, maintain), this time in a different
+programming language. Talk about barriers to entry.
+
+```
+Python Variable               Doge (int|hex|base58)   Dash
+P2SH____Address                22|      16|9,A ???     16|      10|7
+P2SH____LegacyAddress          22|      16|9,A ???     16|      10|7
+P2SH____TestnetAddress        196|      c4|2           19|      13|8
+P2SH____TestnetLegacyAddress  196|      c4|2           19|      13|8
+P2SH____RegtestAddress        196|      c4|2           19|      13|8
+P2SH____RegtestLegacyAddress  196|      c4|2           19|      13|8  
+P2PKH____Address               30|      1e|D           76|      4c|X
+P2PKH____TestnetAddress       113|      71|n          140|      8c|y
+P2PKH____RegtestAddress       111|      6f|m,n        140|      8c|y
+C____Key                      158|      9e|6,Q ???    204|      cc|7,X
+C____TestnetKey               241|      f1|9          239|      ef|9,c
+C____RegtestKey               239|      ef|9,c        239|      ef|9,c
+C____ExtPubKey                   |02FACAFD|dgub          |0488b21e|xpub
+C____ExtKey                      |02FAC398|dgpv          |0488ade4|xprv
+C____TestnetExtPubKey            |043587CF|tpub          |043587CF|tpub        
+C____TestnetExtKey               |04358394|tprv          |04358394|tprv        
+C____RegtestExtPubKey            |043587CF|tpub          |043587CF|tpub        
+C____RegtestExtKey               |04358394|tprv          |04358394|tprv        
+```
+
+Got a bit stuck for a minute trying to convert from the hex to the letter to
+double check this, but remember, the address should be 25 bytes, and the first
+byte of the base58 encoding is the length. It worked when I used this in cyber
+chef:
+
+`8c000000000000000000000000000000000000000000000000`
+from hex
+to base58
+take bytes(0,1)
+
+Having trouble reconciling the P2SHDogecoinAddress. 22 decimal is 16 in hex
+which when appended to a 25 byte address comes out as `9` or `A`.
+
+Doge in goland has this and I get `6` or `Q`:
+```
+PrivateKeyID:            0x9E, // 158 starts with 5 (uncompressed) or K (compressed)
+```
+
+TODO: The go code comment in doge says starts with `3`. I need to confirm this is wrong.
+TODO: The go code comment for dash also seems wrong:
+```
+ScriptHashAddrID:        byte(19), // starts with 2
+```
+I make that `8`??!
+
+`933aenYLSA25ppgaAg4YtU7QgZcUx396ZNStAdEBMPkq1A47r3m`
+`efc03d33d24a4f01109233fe76c247dfe8d80e15416e15d83960636dd2b016f237b5bc3a44`
+private wif - uncompressed | 37 bytes, 74 hex | ef | byte(239) | base58:9
+
+`cU2PXn1Jn2onJ5TfPhQfkAfHXcwcMvSjXsfEqUuAh1SSsLfaUJ5s`
+`efc03d33d24a4f01109233fe76c247dfe8d80e15416e15d83960636dd2b016f23701d67d5e46`
+private wif - compressed   | 38 bytes, 76 hex | ef | byte(239) |  base58:c
+
+Here's another discrepency. For dash `PrivateKeyID` we have `byte(204)` but
+using the scripts I've already used to import keys, I'm seeing `0xef` or
+`byte(239)`.
+
+For doge mainnet we have `0x9e` in the code and `byte(158)` and base58:`5`
+compressed and base58:`K` uncompressed. Let's check:
+`9e000000000000000000000000000000000000000000000000000000000000000000000000`
+`6`
+
+`9eff0000000000000000000000000000000000000000000000000000000000000000000000`
+`6`
+
+`9e00000000000000000000000000000000000000000000000000000000000000000000000000`
+`Q`
+
+`9eff000000000000000000000000000000000000000000000000000000000000000000000000`
+`Q`
+
+`cc00000000000000000000000000000000000000000000000000000000000000000000000000`
+`X`
+
+`cc000000000000000000000000000000000000000000000000000000000000000000000000`
+`7`
+
+`ef00000000000000000000000000000000000000000000000000000000000000000000000000`
+`c`
+
+`ef000000000000000000000000000000000000000000000000000000000000000000000000`
+`9`
+
+Yeah I think all the comments are wrong. Quite misleading. Going by the code...
+
+`043587CF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000`
+`tpub`
+
+
+https://gitlab.com/alexdcox/python-dashtx
+https://gitlab.com/thorchain/bifrost/python-dashtx
+
+Might have found a bit of an issue with `heimdall`. If you want to add a new
+chain you have to include new python dependencies. These are baked into the
+container, and the container is always pulled from the registry on `make
+smoke`. So any attempt to update the dependencies is ignored, so the tests will
+fail.
+
+Perhaps `imagePullPolicy: IfNotPresent` and building locally is a good solution?
+
+Also, why does `make build` pull the image it's trying to build before building
+over it? That seems a bit crazy. Surely it would fetch anything it needs in the
+build. What happens when the chicken comes before the egg? Why is a raven like
+a writing desk?
+
+>   Resolved https://gitlab.com/alexdcox/python-dashtx.git to commit a14d9420369644a83060df8c82dedc225e7b3dfd
+
+Ahh looks like there's a hard-coded reference to a commit somewhere?
+
+TBC next time...
+
+### 21.05.2022 Saturday
+
+No really, it is a Saturday. It's a lovely day outside. Sunny. Warm. I'm going
+to work. You might ask me where my sanity has gone. I did skip work on Thursday,
+so I'm back-filling that missed day on my schedule. That's why.
+
+So with that. Here goes.
+
+
+Need commit `a25cd91`
+
+`pip3 install git+https://gitlab.com/alexdcox/python-dashtx.git#egg=python-dashtx`
+
+> raise ImportError('secp256k1 library not found')
+
+Oh?
+
+`pip3 install git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx`
+
+Yeah the TC version of dogecoin python raises the same error.
+
+Feel like it can't be right that I have to do this just to use an import.  
+Shouldn't the import have it's own list of dependencies??  
+
+```
+pip3 install secp256k1
+```
+
+Doesn't seem to help.
+
+This is what is says it's doing:
+
+```
+git clone --filter=blob:none --quiet https://gitlab.com/alexdcox/python-dashtx.git /tmp/pip-install-um8vk0mi
+```
+
+Ahh I actually had two repos `python-dash` and `python-dashtx` and forgot to
+delete the former. That was confusing. Looks like the build is going to work
+now.
+
+> ValueError: Unknown chain 'dash/regtest'
+
+Dejavu. Argh.
+
+```
+docker run \
+  -it \
+  --rm \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+  python
+
+```
+
+```python
+from bitcointx import select_chain_params
+
+from dogecointx.wallet import P2PKHDogecoinRegtestAddress
+select_chain_params('dogecoin/mainnet')
+
+from dashtx.wallet import P2PKHDashRegtestAddress
+select_chain_params('dash/regtest')
+```
+
+Okay that actually worked. What about `regtest`? Yep. No problem.
+
+- [ ] TODO: Need to find out the size of the withdrawal tx so I can set an
+  estimate in heimdall.
+
+
+```
+docker run \
+  -it \
+  --rm \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --generate-balances=True
+```
+
+Realised I put dash mainnet addresses in the alias section, also missed a few
+references in there for dash.
+
+> Cannot transfer. No DASH UTXO available for yZnyJAdouDu3gmAuhG3dTc66hroS4AXxnL
+
+So I need the node to be generating to that address it seems. How do the other
+nodes configure this?
+
+
+### 22.05.2022 Sunday
+
+Just getting the DI account squared away at the moment...  
+Last comment on DI was 24.03.2022  
+That was paying out my work up to the 07.03.2022  
+74.5hrs to claim from 29.03.2022 to 22.05.2022 (today).  
 
 
 
