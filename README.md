@@ -91,6 +91,18 @@ before I can move on...
 [21.05.2022 Saturday 3.5hrs](#21052022-saturday)  
 [22.05.2022 Sunday 1hr](#22052022-sunday)  
 
+[23.05.2022 Monday 7h](#23052022-monday)  
+[24.05.2022 Tuesday 0h](#24052022-tuesday)  
+[06.07.2022 Wednesday 3h 30m](#06072022-wednesday)  
+[07.07.2022 Thursday 7h 15m](#07072022-thursday)  
+[08.07.2022 Friday 1h](#08072022-friday)  
+[14.07.2022 Thursday 7h](#14072022-thursday)  
+[15.07.2022 Friday 7h 20m](#15072022-friday)  
+[21.07.2022 Thursday 7h](#21072022-thursday)  
+[22.07.2022 Friday 7h](#22072022-friday)  
+
+
+
 ### 04.01.2022 Tuesday
 
 Having a check-in and seeing if there's anything that needs to be done for the
@@ -4905,6 +4917,1641 @@ Last comment on DI was 24.03.2022
 That was paying out my work up to the 07.03.2022  
 74.5hrs to claim from 29.03.2022 to 22.05.2022 (today).  
 
+
+### 23.05.2022 Monday
+
+New thornode stack on vm.  
+Waiting for block 20.  
+Rerunning the smoke tests.  
+Oh same error about the utxo. Did I rebuild the dash docker image?  
+Clearly not, rebuilt, restarting stack, waiting for 20...  
+Smoking.  
+Same deal. Now that's worrying. What happens when I just run the thing? Scratch
+that I didn't pull `node-launcher` changes. Cycling back.  
+Smoking.  
+
+> E[2022-05-23 20:03:27,228] {"result":null,"error":{"code":-32,"message":"signrawtransaction is deprecated and will be fully removed in v0.18. To use signrawtransaction in v0.17, restart dashd with -deprecatedrpc=signrawtransaction.\nProjects should transition to using signrawtransactionwithkey and signrawtransactionwithwallet before upgrading to v0.18"},"id":null}
+
+Ahh. I've seen that before on other chains.  
+
+`signrawtransactionwithkey`  
+`signrawtransactionwithwallet`  
+
+Okay updated, pushed locally, pulled on vm, restarting stack, waiting for 20...  
+Smoking.  
+
+> E[2022-05-23 20:18:01,144] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 639, in run
+    self.broadcast_chain(txn)
+  File "/app/scripts/smoke.py", line 403, in broadcast_chain
+    return self.mock_dash.transfer(txn)
+  File "/app/chains/dash.py", line 222, in transfer
+    tx_in = [{"txid": unspent["txid"], "vout": unspent["vout"]}]
+KeyError: 'txid'
+make: *** [Makefile:42: smoke] Error 1
+
+Is that saying there's no `txid` field as part of the unspent?
+
+```python
+default_gas = 100000
+...
+min_amount = float(amount + (self.default_gas / Coin.ONE))  # add more for fee
+```
+
+`100000 / 100000000 = 0.001`  
+I'm generating `500.0` at a time so surely that's ok.  
+
+Maybe this is where the issue lies:  
+`unspents = self.call("listunspent", 1, 9999, [str(address)])`
+
+What address is it asking for? Maybe that address doesn't resunt in an utxo
+selection because there are none to choose from?
+
+Added some extra logging:
+
+```python
+logging.warning("Selecting UTXO for: " + str(address))
+```
+  
+Oh it's because I'm trying to send 2K dash and all the utxos are 500 max. Riight.
+
+Need to rework some of the tx values in the heimdall data file to match the 500
+limit. At one point there's a 2K tx which will of course fail.
+
+Okay updated transaction data, push/pull, new stack, waiting for 20...  
+Running regenerate balances, perhaps we could just have a script for this too?...  
+If `heimdall` was in go, we could use the same core logic for pools, and then
+just have a mock thorchain network run instantly and print the balances from that, right?  
+
+Running generate balances only... 🙏  
+I'm getting the same error:  
+> Exception: Address for alias not found, chain not supported (DASH)
+
+Which tells me the scripts are built into the `heimdall` docker image. I changed
+that to actually print the alias that wasn't found to help with debugging.  
+Rebuilt  
+Re done did all the things.  
+Running the `smoke.py --generate-balances=Yesdeargodpleasedothat` 🙏🙏🙏  
+
+Loads of errors. I might need to ask for help with this.  
+I asked heimdall. That seemed appropriate.  
+Also reached out to Eridanus at 9R as he seems to know what he's doing.  
+
+My best guess is that I'm asking it to do something it can't do, so the expected
+event never gets fired.
+
+> thornode_1      | 1:23AM INF receive MsgDeposit coins=[{"amount":"50000000000","asset":"THOR.RUNE"}] from=tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 memo=SWAP:BNB.BNB:tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257
+> thornode_1      | 1:23AM ERR fail to process native inbound tx error="swap destination address is not the same chain as the target asset: unknown request" tx hash=3715CDF3EF26C444F89C00C9980EBCB4BC114BD8115E0FE70F2D83F3EECF296C
+
+
+```
+address tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257    
+alias   provider_1
+type    SWAP
+dest    BNB.BNB
+amount  50000000000
+asset   THOR.RUNE
+```
+
+So it's trying to send to itself? So I'm trying to match this error with the
+transactions data...
+
+> thornode_1      | 1:24AM INF receive MsgDeposit coins=[{"amount":"100000000000","asset":"THOR.RUNE"}] from=tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 memo=SWAP:BNB.BNB:tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257
+> thornode_1      | 1:24AM ERR fail to process native inbound tx error="swap destination address is not the same chain as the target asset: unknown request" tx hash=F82B68B4AA3094056144DAB5991F45D49EBEA4F36825D6F240A769BE5146F63F
+
+Okay here's a question. If I revert all my dash stuff, will it work? Because
+BNB.BNB is the thing that's broken and I haven't touched that.
+
+```
+git checkout develop -- data/smoke_test_transactions.json
+EXPORT=data/smoke_test_balances.json EXPORT_EVENTS=data/smoke_test_events.json make test
+make smoke
+```
+
+Yeah, they fail. That's actually good. Now I can diff my generated events with
+the develop branch compiled events and see what is breaking it...  
+
+```
+git diff --cached develop
+```
+
+Nothing major. Bit difficult to see being on my branch. Going to do it on a clean
+branch.
+
+Using main branch doesn't cause any issues. I'm lost.
+
+```
+git checkout 982-add-dash-chain
+git checkout develop -- data/smoke_test_transactions.json
+EXPORT=data/smoke_test_balances.json EXPORT_EVENTS=data/smoke_test_events.json make test
+git add -A
+git commit -am 'WIP'
+git diff develop -- data
+```
+
+No changes.
+
+Pulled develop on my vm again, rerunning the smoke tests on develop branch.
+
+I'm thinking perhaps my thornode dash branch has drifted behind too much and now
+is out of alignment with the latest heimdall changes. If this smoking works then
+I'd expect my branch to just work.
+
+It failed. Ok. Trying again with the official image.
+
+```
+docker images
+docker rmi -f 54a82d84fcc2 9e75f439b5a5 73412f277ebd
+docker pull registry.gitlab.com/thorchain/thornode:mocknet
+```
+
+Obviously, dash will no longer work, but on my heimdall dash branch and with a
+checked out version of develop transactions, I'd expect things to work just fine.
+
+Ah thorchain startup is broken now. On `thornode` in my vm:
+
+```
+git checkout develop
+git pull
+cd build/docker
+```
+
+Restarted the cluster.  
+So. Many. Bash. Errors. Wtf.  
+I'm on the latest develop branch. I'm using the unmodified docker compose.  
+I'm using the image referenced in that compose file.  
+Let's just rebuild the thornode image and try again.  
+Perhaps the one on registry.gitlab.com `thornode` official is just way behind.  
+That's better.  
+
+Failed to connect??  
+
+> W[2022-05-24 04:31:14,536] Retrying (Retry(total=4, connect=4, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7ff5afc21960>: Failed to establish a new connection: [Errno 111] Connection refused')': /
+
+Rebuilding heimdall as well...   
+Argh. Lets reboot the vm...  
+Check docker networks are all deleted.  
+
+I'll wait for block 20.  
+😢  
+Why. Why is it doing this??  
+Why is the error so unhelpful?  
+
+It says it can't connect using `urllib3.connection.HTTPConnection` to `/`, ok,
+whats the domain/ip? What protocol are you trying to use?
+
+Okay the stacktrace has `dash` in it. Gotcha. It's trying to connect to the
+non-existent dash node. How do I comment that out for now?
+
+Commented a bunch of dash related things out in `scripts/smoke.py`. I have a
+good feeling about this. Cummon baby.
+
+> 'Smoker' object has no attribute 'mock_dash'
+
+Correct, I removed it. Don't worry about it.  
+Clearly, I wasn't heavy handed enough with my commenting out.  
+Now.  
+It's a good time to work.  
+
+Thank god. All green.
+
+- [ ] TODO: Need to ensure the pipelines for `thornode`, `node-launcher` and
+  `heimall` are all green/passing.
+
+
+### 24.05.2022 Tuesday
+
+Might only get a few hours done today. 
+
+To start with I need to access the vm running on my home pc, as I'm working
+remotely. I'll just use google desktop to access my pc, then install a zerotier
+network within the vm, and ssh via the vpn.
+
+Done, Took 5 minutes. God I love zerotier.
+
+Attempts:
+- `thornode:default` and `heimdall:add-dash` (dash commented out in  `smoke.py`) OK
+- `thornode:add-dash` and `heimdall:add-dash` (dash commented out in  `smoke.py`) ?
+
+It really does take a while to rebuild the `thornode` docker image.
+
+
+### 06.07.2022 Wednesday
+
+Coming back to this after the long break, with a fresh new laptop :) Time to
+wrinse it. Now where on earth am I???
+
+Firstly pulling `thornode` changes to `develop`.  
+> Updating d223f726c..46a919f1d  
+166 commits. What happened?  
+
+
+```bash
+gd d223f726c..46a919f1d -- bifrost/pkg/chainclients/bitcoincash
+```
+
+- delete block_meta
+- delete block_meta_accessor
+- delete block_meta_accessor_test
+- delete block_meta_test
+
+So I'm now using an M1 mac but all my homebrew installs have been copied over
+from my old intel mac. I'm getting issues.
+
+```
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+
+```
+
+Installed homebrew arm and latest go.  
+I now have `/opt/homebrew` AND `/usr/local/Cellar/`  
+
+> Warning: /opt/homebrew/bin is not in your PATH.
+  Instructions on how to configure your shell for Homebrew
+  can be found in the 'Next steps' section below.
+
+Okay back on track. Have:
+
+`go mod tidy`
+
+> gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/bitcoin imports
+>   github.com/btcsuite/btcd/chaincfg/chainhash loaded from github.com/btcsuite/btcd@v0.22.0-beta,
+>   but go 1.16 would fail to locate it:
+>   ambiguous import: found package github.com/btcsuite/btcd/chaincfg/chainhash in multiple modules:
+>   github.com/btcsuite/btcd v0.22.0-beta (/Users/adc/go/pkg/mod/github.com/btcsuite/btcd@v0.22.0-beta/chaincfg/chainhash)
+>   github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 (/Users/adc/go/pkg/mod/github.com/btcsuite/btcd/chaincfg/chainhash@v1.0.1)
+> 
+> To proceed despite packages unresolved in go 1.16:
+>   go mod tidy -e
+> If reproducibility with go 1.16 is not needed:
+>   go mod tidy -compat=1.17
+> For other options, see:
+>   https://golang.org/doc/modules/pruning
+
+`go mod tidy -e`
+
+> gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/bitcoin imports
+>   github.com/btcsuite/btcd/chaincfg/chainhash loaded from github.com/btcsuite/btcd@v0.22.0-beta,
+>   but go 1.16 would fail to locate it:
+>   ambiguous import: found package github.com/btcsuite/btcd/chaincfg/chainhash in multiple modules:
+>   github.com/btcsuite/btcd v0.22.0-beta (/Users/adc/go/pkg/mod/github.com/btcsuite/btcd@v0.22.0-beta/chaincfg/chainhash)
+>   github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 (/Users/adc/go/pkg/mod/github.com/btcsuite/btcd/chaincfg/chainhash@v1.0.1)
+
+Argh.  
+
+Just checked out the develop version and worked with that.  
+Now I'm getting `Coin` is undefined in `common/coin.go`.  
+Interesting.  
+Invalidating the cache to see if that helps.  
+Seems like the repo is in a state of disrepair at the moment...  
+It was because the proto files were not comitted. D'oh.  
+
+Okay how do I generate these proto files?  
+Does `protocgen.sh` exist in the project repo?  
+
+`make protob`  
+> find: -printf: unknown primary or operator
+> make: *** [protob] Error 1
+
+Another script that doesn't work properly on mac :(  
+Why can't this just be part of go generate?  
+Replaced `find` with `gfind` (gnu find for mac) in `./scripts/protocgen.sh` and
+all is well. But I had to check that script out again so note to me: try and 
+remember that protobuf requires manual shenanigans.  
+
+
+### 07.07.2022 Thursday
+
+`go test -tags mocknet ./...`  
+> go: no such tool "compile"
+
+Huh?  
+Oh I was using an old terminal tab with invalid `GOROOT` env var.  
+
+> address_test.go:422:
+>     c.Check(addr.GetNetwork(semver.MustParse("999.0.0"), DASHChain), Equals, MockNet)
+> ... obtained common.ChainNetwork = 0x0
+> ... expected common.ChainNetwork = 0x2
+
+Dash testnet and mocknet are the same, switched test to `TestNet`.
+
+All tests passing :)
+
+Asked Aquila from Nine Realms to get Dash into the next milestone.
+
+Back to the smoke tests...
+
+Getting this when rebuilding the thornode docker image:
+> [Warning] The requested image's platform (linux/amd64) does not match the
+  detected host platform (linux/arm64/v8) and no specific platform was
+  requested
+
+This was the solution:  
+`export DOCKER_DEFAULT_PLATFORM=linux/amd64`  
+
+Haven't looked into these yet:
+```
+brew install gitlab-runner
+brew services start gitlab-runner
+gitlab-runner install
+gitlab-runner start
+
+gitlab-runner exec docker lint
+gitlab-runner exec docker unit-tests
+gitlab-runner exec docker smoke-test
+```
+
+Getting this when running the heimdall tests:  
+> ModuleNotFoundError: No module named 'terra_proto.terra'
+
+Probably just outdated right?  
+`gco develop && ggpull`  
+> rename chains/{terra.py => gaia.py
+
+Good to know.  
+Just going to try for a clean run using `develop`.
+
+```
+docker run \
+  -it \
+  --rm \
+  --network thorchain_default \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  --entrypoint bash \
+  registry.gitlab.com/thorchain/heimdall
+
+docker run \
+  -it \
+  --rm \
+  --network thorchain_default \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py \
+      --thorchain http://thorchain-thornode-1:1317 \
+      --binance http://thorchain-binance-1:26660 \
+      --gaia http://thorchain-gaia-1:21317 \
+      --bitcoin http://thorchain:password@thorchain-bitcoin-1:18443 \
+      --bitcoin-cash http://thorchain:password@thorchain-bitcoin-cash-1:28443 \
+      --litecoin http://thorchain:password@thorchain-litecoin-1:38443 \
+      --dogecoin http://thorchain:password@thorchain-dogecoin-1:18332 \
+      --ethereum http://thorchain-ethereum-1:8545 \
+      --midgard http://thorchain-midgard-1:8080
+```
+
+http://thorchain-thornode-1:6030  
+http://thorchain-thornode-1:6040  
+http://thorchain-thornode-1:6060  
+
+Heimdall is designed for all the ports to be accessible via localhost.  
+Heimdall assumes bifrost and thornode are on the same node/container (no bifrost
+specific config).  
+
+What to do about that...  
+docker network host is the answer, that's already setup apparently.  
+
+There's a worrying lack of output from the smoke tests.  
+
+Added that `loglevel` envvar but it's just showing http requests not the actual
+smoke test output.
+
+```
+docker rmi registry.gitlab.com/thorchain/heimdall
+
+docker pull registry.gitlab.com/thorchain/heimdall
+
+docker build --platform linux/amd64 -t registry.gitlab.com/thorchain/heimdall .
+
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --pull never \
+  --platform linux/amd64 \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --fast-fail=True
+
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --entrypoint bash \
+  --pull never \
+  --platform linux/amd64 \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall
+```
+
+Best thing to do is just watch the bifrost logs and refresh
+`http://localhost:6040/p2pid` until bifrost is ready, then run the smoke tests.
+
+The `run`s above worked, the first normally and the second from within a shell
+inside the container.
+
+```
+I[2022-07-07 21:38:27,324] 71     USER-1 => VAULT      [SWAP:GAIA.ATOM:USER-1] 1.00000000 BNB.BNB
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event refund | {'code': '108'} {'reason': 'fail swap, invalid balance'} {'id': '5BB162F6905AD92D6347F0C62D56C1513CC7C486F9A052B36EB6A8A8CC9C6527'} {'chain': 'BNB'} {'from': 'tbnb157dxmw9jz5emuf0apj4d6p3ee42ck0uwksxfff'} {'to': 'tbnb1qf2l2hd4cp2dd2z45jtv2d9zxczansdk78hg56'} {'coin': '100000000 BNB.BNB'} {'memo': 'SWAP:GAIA.ATOM:cosmos1z63f3mzwv3g75az80xwmhrawdqcjpaek5l7xc0'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event refund | {'code': '108'} {'reason': "GAIA.ATOM pool doesn't exist"} {'id': '5BB162F6905AD92D6347F0C62D56C1513CC7C486F9A052B36EB6A8A8CC9C6527'} {'chain': 'BNB'} {'from': 'tbnb157dxmw9jz5emuf0apj4d6p3ee42ck0uwksxfff'} {'to': 'tbnb1qf2l2hd4cp2dd2z45jtv2d9zxczansdk78hg56'} {'coin': '100000000 BNB.BNB'} {'memo': 'SWAP:GAIA.ATOM:cosmos1z63f3mzwv3g75az80xwmhrawdqcjpaek5l7xc0'}
+E[2022-07-07 21:38:46,613] Events mismatch
+
+E[2022-07-07 21:38:46,614] Smoke tests failed
+Traceback (most recent call last):
+ File "/mnt/heimdall/scripts/smoke.py", line 136, in main
+   smoker.run()
+ File "/mnt/heimdall/scripts/smoke.py", line 630, in run
+   self.check_events(events, sim_events)
+ File "/mnt/heimdall/scripts/smoke.py", line 368, in check_events
+   self.error("Events mismatch\n")
+ File "/mnt/heimdall/scripts/smoke.py", line 235, in error
+   raise Exception(err)
+Exception: Events mismatch
+```
+
+So with my thorchain image and my heimdall image it got stuck at/after 71.
+
+Trying with the offical ones on develop...  
+Removed all the thornode/heimdall images.  
+
+It fails spectacularly. Thornode container wont start up, thornode not found, no
+such file or directory errors, madness.
+
+DELETE EVERYTHING  
+`docker system prune -a`  
+
+```
+docker run \
+  -it \
+  --rm \
+  --name thornode \
+  --platform linux/amd64 \
+  -e NET=mocknet \
+  -e CHAIN_ID=thorchain \
+  registry.gitlab.com/thorchain/thornode:mocknet \
+    thornode
+```
+
+> docker: Error response from daemon: failed to create shim task: OCI runtime
+  create failed: runc create failed: unable to start container process:
+  exec: "thornode": executable file not found in $PATH: unknown.
+
+```
+docker run \
+  -it \
+  --rm \
+  --name thornode \
+  --platform linux/amd64 \
+  -e NET=mocknet \
+  -e CHAIN_ID=thorchain \
+  registry.gitlab.com/thorchain/thornode:mocknet \
+    find / -name thornode
+```
+
+nothing. There's no `thornode` binary in that container. wtf.  
+
+```
+docker run \
+  -it \
+  --rm \
+  --name thornode \
+  --platform linux/amd64 \
+  -e NET=mocknet \
+  -e CHAIN_ID=thorchain \
+  registry.gitlab.com/thorchain/thornode:latest \
+    find / -name thornode
+```
+
+nothing. Is this some kind of practical joke?  
+
+```
+docker run \
+  -it \
+  --rm \
+  --name thornode \
+  --platform linux/amd64 \
+  -e NET=mocknet \
+  -e CHAIN_ID=thorchain \
+  registry.gitlab.com/thorchain/thornode:latest \
+    thornode
+```
+
+```
+docker run \
+  -it \
+  --rm \
+  --name thornode \
+  --platform linux/amd64 \
+  -e NET=mocknet \
+  -e CHAIN_ID=thorchain \
+  registry.gitlab.com/thorchain/thornode:00bbe31ad \
+    thornode
+```
+
+Okay that one has a `thornode` binary. But not `latest` or `mocknet`??
+
+`docker tag registry.gitlab.com/thorchain/thornode:00bbe31ad registry.gitlab.com/thorchain/thornode:mocknet`
+
+In `node-launcher`, after some tweaking to allow me to run it locally:
+`./ci/images/build.sh`
+
+> cp: can't stat '/scripts/bifrost-config-template.json': No such file or directory
+
+Now that would only happen if it were using my code. I deleted everything.  
+At what point is it rebuilding thornode using my code?  
+
+Ah yes, scripts are mounted. This is the problem with coming back to this after
+a month, there's so much to remember. Switching to `develop` branch on `thornode`.
+
+`bifrost` keeps crashing. Can't connect to `thorchain-bitcoin-1`.  
+
+Bitcoin container is showing this error:
+> bitcoind: error while loading shared libraries: libgcc_s.so.1: cannot open shared object file: No such file or directory
+
+```
+docker rmi registry.gitlab.com/thorchain/devops/node-launcher:bitcoin-daemon-22.0
+docker pull registry.gitlab.com/thorchain/devops/node-launcher:bitcoin-daemon-22.0
+```
+
+Retry. Are my builds squiffy? If we get another connection error for another
+node I'm going to assume yes.
+
+Well assumed. Rebuilding with platform envvar set. That's going to be so easy to
+forget.
+
+Bonbonbonbons, we're there. So how do I not fuck up heimdall?
+
+```
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --platform linux/amd64 \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --fast-fail=True
+```
+
+It's pulling. That's good. 71 to beat 🤞  
+
+Finally got all the way to 110. Okay. Great. Fantastic. Amazing.  
+Now with my image configured with dash but without dash enabled...  
+I'm keeping heimdall the same.  
+
+`thornode`  
+```
+git checkout 982-add-dash-chain
+
+cd build/docker
+
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+docker build \
+  --progress plain \
+  --build-arg TAG=mocknet \
+  -t registry.gitlab.com/thorchain/thornode:mocknet \
+  -f Dockerfile \
+  ../..
+
+export COMPOSE_PROFILES="mocknet,midgard"
+export COMPOSE_PROJECT_NAME=thorchain
+
+while true; do
+  docker compose up --remove-orphans -d
+  echo -n "Press enter to STOP thorchain..."
+  read ignored
+  docker compose down --volumes
+  echo -n "Press enter to RESTART thorchain..."
+  read ignored
+done
+```
+
+Bifrost has connected to thornode and is generating the primes.  
+Done, and I have a p2pid.  
+
+Just a quick check to make sure it's definitely using my new thornode/bifrost
+image:
+
+```
+docker exec thorchain-bifrost-1 ls -la /scripts/bifrost-config-template.json
+```
+
+Yep, that's where it should be. So far so good.  
+Now... 😬 heimdall...  
+
+`heimdall`
+```
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --pull never \
+  --platform linux/amd64 \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --fast-fail=True
+```
+
+Waiting for the standard 20s of docker/python startup...  
+We're off!  
+Can it reach 110???  
+
+Same place. This is the crucial log from thorchain:
+
+> fail to swap error="fail swap, invalid balance"
+  msg="0B71F4F06888490CCA10E543CACDB4D86E6B4F3CE2EF09232693A159C988752B:
+  tbnb157dxmw9jz5emuf0apj4d6p3ee42ck0uwksxfff ==>
+  tbnb1gm5prz65qkrkhrvm567ctpwhfc32xu04p00szp
+  (Memo: SWAP:GAIA.ATOM:cosmos1z63f3mzwv3g75az80xwmhrawdqcjpaek5l7xc0)
+  100000000 BNB.BNB (gas: [37500 BNB.BNB])"
+
+Can I find this address anywhere?  
+`tbnb157dxmw9jz5emuf0apj4d6p3ee42ck0uwksxfff`  
+
+It's in `aliases_bnb` in `aliases.py` within `heimdall` for `USER-1`.  
+I have a feeling this has something to do with my genesis script being different
+from the offical branch, perhaps not including an address or an updated amount.
+
+It looks like we're expecting a refund but what's actually happening is we're
+getting a "gaia.atom pool doesn't exist" error.
+
+
+Okay tomorrow I'd like to see if the bifrost config for gaia looks ok.
+
+
+### 08.07.2022 Friday
+
+New stack.  
+
+I have a plan. Going to compare the logs from this run with my thornode image
+against the logs from the official one and see if all these thornode error logs
+I'm seeing are valid or not.
+
+Got to run to the airport to collect my baggage, they finally have it after 10
+days of not having any clothes etc.
+
+### 14.07.2022 Thursday
+
+Didn't manage much on Friday as it was the beer festival. Envoy and DashDirect
+stuff got in the way too.
+
+Today is TC only.
+
+- Updated develop and merged
+- Rebuilt images
+
+```bash
+cd build/docker
+
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+docker build \
+  --progress plain \
+  --build-arg TAG=mocknet \
+  -t registry.gitlab.com/thorchain/thornode:mocknet \
+  -f Dockerfile \
+  ../..
+
+export COMPOSE_PROFILES="mocknet,midgard"
+export COMPOSE_PROJECT_NAME=thorchain
+
+while true; do
+  docker compose up --remove-orphans -d
+  echo -n "Press enter to STOP thorchain..."
+  read ignored
+  docker compose down --volumes
+  echo -n "Press enter to RESTART thorchain..."
+  read ignored
+done
+```
+
+```bash
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+docker build --platform linux/amd64 -t registry.gitlab.com/thorchain/heimdall .
+
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --pull never \
+  --platform linux/amd64 \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --fast-fail=True
+```
+
+heimdall:  
+> failed to send all outbound transactions 1
+> smoke tests failed
+
+thornode:  
+> Failed to read request err="websocket: close 1006 (abnormal closure): unexpected EOF
+
+I think it could be a freak accident.  
+Need to run again...  
+
+Okay captured a fresh fail on `71` with thorchain (add-dash) heimdall (develop).  
+Now running with dev/dev so I have some logs to compare.  
+
+> SWAP:GAIA.ATOM:cosmos1z63f3mzwv3g75az80xwmhrawdqcjpaek5l7xc0
+
+Searching the above memo will take you to the right place in both thornode logs.
+
+These errors don't exist on the develop branch:
+
+> ERR app/x/thorchain/manager_gas_current.go:86 > network fee is invalid error="transaction size can't be zero or negative: 0" chain=GAIA
+
+> ERR app/x/thorchain/handler_swap.go:38 > fail to handle MsgSwap error="fail swap, invalid balance"
+
+> ERR app/x/thorchain/manager_swap_queue_current.go:162 > fail to swap error="fail swap, invalid balance" msg="36093190A1E0AA6FE2D81260C7F8599F04B1FFC87D00CDEA043D9FFD3D81D078: tbnb157dxmw9jz5emuf0apj
+
+- `manager_gas_current`: identical
+- `handler_swap`: identical
+- `manager_swap_queue_current`: identical
+- `./bifrost/pkg/chainclients/gaia/*`: identical
+- Just compared my branch vs develop and there's nothing obvious that would make gaia different.
+- Is the generated bifrost config the same in my version vs the official?
+
+  
+Instead of constantly having to rebuild I'm going to tag using the branch names
+and latest commit as well.
+
+```bash
+docker build \
+  --progress plain \
+  --build-arg TAG=mocknet \
+  -t registry.gitlab.com/thorchain/thornode:$(git branch --show-current)-$(git rev-parse --short HEAD) \
+  -f Dockerfile \
+  ../..
+
+docker image ls
+
+docker tag registry.gitlab.com/thorchain/thornode:982-add-dash-chain-9d461ce85 registry.gitlab.com/thorchain/thornode:mocknet
+
+docker exec -it thorchain-bifrost-1 cat /etc/bifrost/config.json
+```
+
+Just realised the branch does need to match as well because we're mounting the
+scripts. Argh, so much to remember.
+
+Okay how does it go with the default scripts but MY image?  
+
+Got to `87`. Interesting. Okay that was it. My bifrost scripts mess things up. I'll just
+revert then as I clearly changed things I don't understand well enough.
+
+With 10mins left on the clock, I found the issue. I think I'm going to quit
+while I'm ahead here.
+
+Damn right at the end there I got:
+
+> failed to send all outbound transactions 2
+> Smoke tests failed
+
+I think this is more of a random error caused by too short timeouts rather than
+anything serious. Will run again to check...
+
+
+### 15.07.2022 Friday
+
+- [x] Revert bifrost scripts...
+- [x] Pull from develop
+
+Right now I feel like I should start again completely with heimdall.  
+Hmm.  
+What's the fastest way to do this?  
+
+I'm thinking:
+- rebuild my thornode image
+- merge heimdall dev -> dash
+- remove any dash txs in the list
+- see if that works (it really should at this point)
+- rerun the generate / emulator thingy (this is the bit I'm unsure about)
+  to CREATE the tests which will be run against the actual thornode.
+  tbh I think that bit is going to be the hardest.
+- run the damn thing...
+
+Good plan lets do it.
+
+I need python for heimdall. New macs don't come with python installed. I still
+have the homebrew version which was upgraded for the m1. Current sentiment seems
+that Anaconda is the way to go.
+
+```
+brew install --cask anaconda
+```
+
+Managed to find `anaconda3` in the root of the homebrew directory. Looks like
+that's where it went.
+
+If I want to use `conda`:
+```
+export PATH="/opt/homebrew/anaconda3/bin:$PATH"
+```
+
+Selected the conda binary in the jetbrains plugin and that seemed to do the
+trick. It whirred and did some scary looking stuff and then presented me with
+a list of packages. Not the ones I need though in `requirements.txt`.
+
+I complained it listened, it started fetching them.  
+Bet it wont find `python-dashtx`.  
+
+```
+Collecting package metadata (current_repodata.json): ...working... done
+Solving environment: ...working... failed with initial frozen solve. Retrying with flexible solve.
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... failed with initial frozen solve. Retrying with flexible solve.
+
+
+PackagesNotFoundError: The following packages are not available from current channels:
+
+ - bitcoincash==0.1.5
+
+Current channels:
+
+ - https://repo.anaconda.com/pkgs/main/osx-arm64
+ - https://repo.anaconda.com/pkgs/main/noarch
+ - https://repo.anaconda.com/pkgs/r/osx-arm64
+ - https://repo.anaconda.com/pkgs/r/noarch
+
+To search for alternate channels that may provide the conda package you're
+looking for, navigate to
+
+   https://anaconda.org
+
+and use the search bar at the top of the page.
+```
+
+Not quite what I was expecting but still bad.  
+Hmm.  
+
+Just unchecked that one and it failed at the next one on the list. Looks like
+it just reports the first error and all of them cannot be found.
+
+`python-litecointx` seems to be a pypi package.
+
+You can use pypy "puppy" as the python interpreter in a conda environment,
+apparently.
+
+```
+conda config --set channel_priority strict
+conda create -n pypy pypy
+conda activate pypy
+```
+
+> PackagesNotFoundError
+
+```
+cd /opt/homebrew/anaconda3/envs/heimdall
+```
+
+```
+/opt/homebrew/anaconda3/envs/heimdall/bin/pip install pipreqs
+/opt/homebrew/anaconda3/envs/heimdall/bin/pipreqs
+```
+
+Nope. Well, I have enough syntax highlighting and code sense easily to get by.  
+Resolved git conflicts.  
+
+Now I have a thorchain image and mocknet cluster docker compose file setup to 
+run dash, and a heimdall with the capabilities of understanding dash but without
+actually having dash in the tests.
+
+It might be worth a run here, but I'm going to skip ahead to save 30mins and
+fallback to here if things jenga.
+
+```
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --pull never \
+  --platform linux/amd64 \
+  -v $(pwd):/mnt/heimdall \
+  -w /mnt/heimdall \
+  registry.gitlab.com/thorchain/heimdall \
+    python scripts/smoke.py --fast-fail=True
+```
+
+It's my understanding that we have to manually update `smoke_test_transactions`.  
+The events and balances can be updated during the `make test`.  
+Then we run all that against `make smoke` with a real mocknet cluster.
+
+```
+make test
+EXPORT=data/smoke_test_balances.json EXPORT_EVENTS=data/smoke_test_events.json make test
+make smoke
+```
+
+```
+I[2022-07-15 19:00:42,395] 10     MASTER => USER-1     [SEED] 200.00000000 DASH.DASH
+I[2022-07-15 19:00:42,580] 11     MASTER => PROVIDER-1 [SEED] 2,000.00000000 DASH.DASH
+E[2022-07-15 19:00:42,668] 'txid'
+E[2022-07-15 19:00:42,669] Smoke tests failed
+Traceback (most recent call last):
+ File "/app/scripts/smoke.py", line 143, in main
+   smoker.run()
+ File "/app/scripts/smoke.py", line 639, in run
+   self.broadcast_chain(txn)
+ File "/app/scripts/smoke.py", line 403, in broadcast_chain
+   return self.mock_dash.transfer(txn)
+ File "/app/chains/dash.py", line 222, in transfer
+   tx_in = [{"txid": unspent["txid"], "vout": unspent["vout"]}]
+KeyError: 'txid'
+make: *** [smoke] Error 1
+```
+
+
+`docker exec thorchain-dash-1 dash-cli listunspent`
+
+All are going to `yZnyJAdouDu3gmAuhG3dTc66hroS4AXxnL` except one which is going
+to `yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5` for 200. That looks like the:
+master -> user1 above  
+So master -> provoder1 did actuall fail?  
+
+Ahh I think I found it. Dash utxos are 500 dash max. So we can't send 2K with a
+single utxo.  
+400, sure.  
+
+Brought all dash transaction sizes down an order of magnitude.  
+Retrying...  
+
+```
+I[2022-07-15 19:35:16,728] 77     USER-1 => VAULT      [SWAP:DASH.DASH:USER-1] 1.00000000 BNB.BNB
+E[2022-07-15 19:35:38,266] out coins not matching 2508985011 DASH.DASH != 2510623011 DASH.DASH
+```
+
+```
+2508985011 expected by sim
+2510623011 actual, in logs, part of txout array
+
+25.08985011
+25.10623011
+  .01638000
+```
+
+So we're actually sending a bit more dash to the customer than "expected". This
+could mean we're not charging enough in thornode or calculating too much in the
+simulator. I'm tempted to go with the latter.
+
+Coming from `sim_catch_up`.  
+There's a `thorchain_client` and `thorchain_state`, think state is the sim.  
+Leads into `sim_trigger_tx` which I think is called first.  
+This leads into `broadcast_simulator` which has a line `return self.dash.transfer(txn)`.  
+It also has a comment "Broadcast tx to simulator state chain" which doesn't
+fit because the `self.dash` is an instance of `Dash()` not `MockDash()` and as
+far as I can tell goes on to call `transfer(self, txn)` which actually sends
+that on to the node. How is that a simulator? That's real as real can be.  
+I'm lost.  
+
+Probably just set a fee wrong somewhere. But where??
+
+From the readme:
+> The smoke tests compare a mocknet against a simulator implemented in python.
+
+Alright it's a pinch of questionable naming with a splash of my infamiliarity
+with python at play. So `MockDash` actually makes calls to the dash node so in
+my mind that is a real client, not a mock, `Dash` on the other hand is a mock
+in so far as it doesn't make any real connections, it implements `GenericChain`
+which has a `transfer(self, txn)` method which just moves funds from account
+A to account B in memory. Right. Now that's cleared up...
+
+We have:
+`rune_fee = 2000000`
+
+I'm actually not sure what's going on with the python sim. Going to start by
+stripping it down to just dash and bnb.
+
+```
+I[2022-07-16 02:04:28,084]  0     MASTER => CONTRIB    [SEED] 10.00000000 BNB.BNB
+I[2022-07-16 02:04:28,112]  1     MASTER => USER-1     [SEED] 20.00000000 DASH.DASH
+I[2022-07-16 02:04:28,234]  2     MASTER => PROVIDER-1 [SEED] 200.00000000 DASH.DASH
+I[2022-07-16 02:04:28,327]  3 PROVIDER-1 => VAULT      [SWAP:BNB.BNB:PROVIDER-1-SYNTH] 500.00000000 THOR.RUNE
+I[2022-07-16 02:04:32,474] [-] 499.98000000 THOR.RUNE | Fee 0.02000000 THOR.RUNE | Gas 0.02000000 THOR.RUNE
+I[2022-07-16 02:04:32,475]  4 PROVIDER-1 => VAULT      [ADD:BNB.BNB:PROVIDER-1] 1,000.00000000 THOR.RUNE
+I[2022-07-16 02:04:37,424]  5 PROVIDER-1 => VAULT      [ADD:BNB.BNB:PROVIDER-1] 2.50000000 BNB.BNB
+E[2022-07-16 02:04:42,291] 'NoneType' object is not iterable
+E[2022-07-16 02:04:42,292] Smoke tests failed
+Traceback (most recent call last):
+ File "/app/scripts/smoke.py", line 143, in main
+   smoker.run()
+ File "/app/scripts/smoke.py", line 654, in run
+   self.check_binance()
+ File "/app/scripts/smoke.py", line 293, in check_binance
+   for bal in macct["balances"]:
+TypeError: 'NoneType' object is not iterable
+make: *** [smoke] Error 1
+```
+
+Oh python. Why doth thou ail me?
+
+Took out all txs except BNB + DASH. Getting:
+> 'NoneType' object is not iterable
+
+On:
+> PROVIDER-1 => VAULT      [ADD:BNB.BNB:PROVIDER-1] 2.50000000 BNB.BNB
+
+> I[2022-07-16 04:08:50,140] 31     USER-1 => VAULT      [SWAP:DASH.DASH:USER-1] 1.00000000 BNB.BNB
+> E[2022-07-16 04:09:03,747] out coins not matching 556920153 DASH.DASH != 558558153 DASH.DASH
+
+556920153
+558558153
+
+5.58558153 - 5.56920153
+0.01638
+same difference out :) clues
+
+### 21.07.2022 Thursday
+
+So back to working out why there is a tc, smoke mismatch.
+
+In the smoke test, the run fees are all calculated for all chains like this:
+```
+dash_amount = pool.get_rune_in_asset(int(cls.rune_fee / 2))
+```
+
+And the rune fee is always `rune_fee = 2000000`.  
+Which can be simplified to `pool.get_rune_in_asset(1000000)`.  
+1mill get rune in asset.  
+What does `get_rune_in_asset` mean/do?  
+Think this is a bit misleading, you're not getting rune at all, you're getting
+the asset value for the given rune value, so it could be written like:  
+"get asset equivalent for rune value"  
+So it's asking, what's the dash equivalent for 1 million rune in the pool?  
+Which means the gas price is fixed against rune?
+
+The values have changed a bit:
+
+```
+I[2022-07-22 00:27:39,052] 29 USER-1 => VAULT [SWAP:DASH.DASH:USER-1] 1.00000000 BNB.BNB
+E[2022-07-22 00:28:02,640] out coins not matching 556776998 DASH.DASH != 558414998 DASH.DASH
+```
+
+Probably because of my transactions.json having different txs.
+
+Just saved the output of the above in `run5` md5 of transactions json is: 
+> MD5 (./data/smoke_test_transactions.json) = 7a4ad5d5abdfb669ecb69b416c72c27d
+
+- Any txs with `-SYNTH` all go to the synth addresses?
+
+Here's my attempt to work through heimdall txs here:
+
+- 1: `MASTER => USER-1     [SEED] 26.00000000 BNB.BNB, 1,500.00000000 BNB.LOK-3C0`  
+  Seed USER1 26 BNB and 1500 LOK  
+
+- 2: `MASTER => PROVIDER-1 [SEED] 10.00000000 BNB.BNB, 800.00000000 BNB.LOK-3C0`  
+  Seed PROVIDER1 10 BNB and 800 LOK  
+
+- 3: `MASTER => PROVIDER-2 [SEED] 2.00000000 BNB.BNB, 100.00000000 BNB.LOK-3C0`  
+  Seed PROVIDER2 2 BNB and 100 LOK  
+
+- 4: `MASTER => USER-1     [SEED] 20.00000000 DASH.DASH`  
+  Seed USER1 20 DASH  
+
+- 5: `MASTER => PROVIDER-1 [SEED] 200.00000000 DASH.DASH`  
+  Seed PROVIDER1 200 DASH  
+
+- 6: `PROVIDER-1 => VAULT      [SWAP:BNB.BNB:PROVIDER-1-SYNTH] 500.00000000 THOR.RUNE`  
+  PROVIDER1 trying to SWAP 500 RUNE for BNB  
+  At this point provider1 doesn't seem to actually have any rune  
+  No change, that makes sense  
+  Must be an invalid tx which is immediately prevented without incurring fees?  
+  We're seeing `[-]` which I'm guessing means the transaction didn't happen.  
+
+- 7: `PROVIDER-1 => VAULT      [ADD:BNB.BNB:PROVIDER-1] 1,000.00000000 THOR.RUNE`  
+  PROVIDER1 trying to add 1K RUNE to the BNB pool.  
+  `POOL.BNB.BNB` was created but with 0 values, probably because provider1 still  
+  doesn't have any rune?  
+  Output:  
+  ```json
+{
+    "CONTRIB":
+    {
+        "BNB.BNB": 1000000000
+    },
+    "OUT": 0,
+    "POOL.BNB.BNB":
+    {
+        "BNB.BNB": 0,
+        "THOR.RUNE": 0
+    },
+    "PROVIDER-1":
+    {
+        "BNB.BNB": 1000000000,
+        "BNB.LOK-3C0": 80000000000
+    },
+    "PROVIDER-2":
+    {
+        "BNB.BNB": 200000000,
+        "BNB.LOK-3C0": 10000000000
+    },
+    "TX": 7,
+    "USER-1":
+    {
+        "BNB.BNB": 2600000000,
+        "BNB.LOK-3C0": 150000000000
+    },
+    "VAULT":
+    {}
+}
+  ```
+
+- 8: `PROVIDER-1 => VAULT      [ADD:BNB.BNB:PROVIDER-1] 2.50000000 BNB.BNB`  
+  PROVIDER1 trying to add 2.5 BNB to BNB pool  
+  Looks like it works  
+  Gas is apparently 0.00037500 BNB.BNB  
+  AKA `0.00015` of the value  
+  Now the vault does actually have BNB  
+  Provider 1 has 749962500 BNB which is:  
+  1000000000 - 250000000 - 37500 = 749962500  
+  The output is:  
+  ```json
+{
+    "CONTRIB":
+    {
+        "BNB.BNB": 1000000000
+    },
+    "OUT": 0,
+    "POOL.BNB.BNB":
+    {
+        "BNB.BNB": 250000000,
+        "THOR.RUNE": 100000000000
+    },
+    "PROVIDER-1":
+    {
+        "BNB.BNB": 749962500,
+        "BNB.LOK-3C0": 80000000000
+    },
+    "PROVIDER-2":
+    {
+        "BNB.BNB": 200000000,
+        "BNB.LOK-3C0": 10000000000
+    },
+    "TX": 8,
+    "USER-1":
+    {
+        "BNB.BNB": 2600000000,
+        "BNB.LOK-3C0": 150000000000
+    },
+    "VAULT":
+    {
+        "BNB.BNB": 250000000
+    }
+}
+  ```
+  So the vault AND the pool both have BNB allocated, it's accounted for in two
+  places. It still makes sense, apart from I have no idea where the 1K rune came
+  from. Setup scripts?
+
+  Okay going to combine the aliases in heimdall and the thornode setup script
+  to see if any of these match up and what address gets what:
+
+  ```js
+  let aliases = {
+    "MASTER": "tthor1nrsk6f4kalwwrqqyrfmxzl96hyjhe96t4gmvp2",
+    "CONTRIB": "tthor1m8prd4pvqe5p3cu7tu82pn50a5f9xzxzetc35t",
+    "USER-1": "tthor1z63f3mzwv3g75az80xwmhrawdqcjpaekk0kd54",
+    "PROVIDER-1": "tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257",
+    "PROVIDER-2": "tthor1xwusttz86hqfuk5z7amcgqsg7vp6g8zhsp5lu2",
+    "VAULT": "tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2",
+    "SYNTH": "tthor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38ulmsrp",
+    "RESERVE": "tthor1dheycdevq39qlkxs2a6wuuzyn4aqxhve3hhmlw",
+    "BOND": "tthor17gw75axcnr8747pkanye45pnrwk7p9c3uhzgff",
+  }
+
+  let balances = [
+    {
+      "address": "tthor1wt88pankukq3qhj9ndqpdes2ukuuu4yq22a5lx",
+      "coins": [{"denom": "rune", "amount": "1000000000"}]
+    },
+    {
+      "address": "tthor1z63f3mzwv3g75az80xwmhrawdqcjpaekk0kd54",
+      "coins": [{"denom": "rune", "amount": "5000000000000"}]
+    },
+    {
+      "address": "tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257",
+      "coins": [{"denom": "rune", "amount": "25000000000100"}]
+    },
+    {
+      "address": "tthor18f55frcvknxvcpx2vvpfedvw4l8eutuhku0uj6",
+      "coins": [{"denom": "rune", "amount": "25000000000100"}]
+    },
+    {
+      "address": "tthor1xwusttz86hqfuk5z7amcgqsg7vp6g8zhsp5lu2",
+      "coins": [{"denom": "rune", "amount": "5090000000000"}]
+    },
+    {
+      "address": "tthor1uuds8pd92qnnq0udw0rpg0szpgcslc9p8lluej",
+      "coins": [{"denom": "rune", "amount": "200000000000000"}]
+    },
+    {
+      "address": "tthor1zf3gsk7edzwl9syyefvfhle37cjtql35h6k85m",
+      "coins": [{"denom": "rune", "amount": "200000000000000"}]
+    },
+    {
+      "address": "tthor13wrmhnh2qe98rjse30pl7u6jxszjjwl4f6yycr",
+      "coins": [{"denom": "rune", "amount": "200000000000000"}]
+    },
+    {
+      "address": "tthor1qk8c8sfrmfm0tkncs0zxeutc8v5mx3pjj07k4u",
+      "coins": [{"denom": "rune", "amount": "200000000000000"}]
+    }
+  ]
+
+  balances.forEach(b => {
+    const alias = Object.entries(aliases).find(([k, v]) => v === b.address)
+    if (alias) {
+      console.log(alias[0], b.address, b.coins[0].amount / 1e8, 'RUNE')
+    }
+  })
+  ````
+
+  ```
+USER-1 tthor1z63f3mzwv3g75az80xwmhrawdqcjpaekk0kd54 50000 RUNE
+PROVIDER-1 tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 250000.000001 RUNE
+PROVIDER-2 tthor1xwusttz86hqfuk5z7amcgqsg7vp6g8zhsp5lu2 50900 RUNE
+  ```
+
+  Okay that solves that mystery, moving on...
+
+- 9: `PROVIDER-1 => VAULT      [ADD:DASH.DASH:PROVIDER-1] 10.00000000 THOR.RUNE`  
+  PROVIDER1 trying to ADD 10 RUNE to DASH pool  
+  Should work, we see the `POOL.DASH.DASH` with nothing in it. We'd expect the  
+  vault to hold the necessary rune but I think rune is just being omitted.  
+  
+- 10: `PROVIDER-1 => VAULT      [ADD:DASH.DASH:PROVIDER-1] 150.00000000 DASH.DASH`  
+  PROVIDER1 trying to ADD 150 DASH to dash pool  
+  I'm looking at the outputs above and seeing that the Provider1 and User1  
+  should be showing 200 DASH and 20 DASH respectively, they're not.  
+  
+  Going to rebuild heimdall on this branch to make sure I have my changes
+  included. Also double check the makefile...
+
+  ```bash
+  docker run \
+    -it \
+    --rm \
+    --name heimdall \
+    --network host \
+    --pull never \
+    --platform linux/amd64 \
+    -v $(pwd):/app \
+    -e RUNE=THOR.RUNE \
+    -e LOGLEVEL=INFO \
+    -e PYTHONPATH=/app \
+    -w /app \
+    registry.gitlab.com/thorchain/heimdall \
+      python scripts/smoke.py --fast-fail=True
+  ```
+
+  If this still doesn't seem to SEED, I'll try with DOGE too and see if that
+  seeds or if it's nothing to worry about.
+
+  Okay, DOGE doesn't get added to the vault either.
+
+  Next step: Add a shit tonne of logging to heimdall until I understand what's
+  going on better...
+
+  ```python
+  logging.info(f"@DASH CALCULATE GAS dash_amount: {dash_amount}")
+  ```
+
+  Interestingly, there's this: `default_gas = 100000` which is one 0/d.p out
+  from the stuff I found before.
+
+  So at this point we have:
+  `'POOL.DASH.DASH': {'DASH.DASH': 15000000000, 'THOR.RUNE': 1000000000},`
+
+  
+
+The second number is the actual number sent on the dash network. i.e.
+```json
+{
+  "involvesWatchonly": true,
+  "address": "yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5",
+  "category": "receive",
+  "amount": 5.58414998,
+  "label": "",
+  "vout": 0,
+  "confirmations": 306,
+  "instantlock": false,
+  "instantlock_internal": false,
+  "chainlock": false,
+  "blockhash": "731b9cc7a7263056631ca08d7e2f0ef5701d5100fdad79f6926e77724a35a248",
+  "blockindex": 3,
+  "blocktime": 1658462283,
+  "txid": "dceea33a8a4fb48e442bfe67d9a7503edfc1648e653785b9c564a385d8873dda",
+  "walletconflicts": [
+  ],
+  "time": 1658462283,
+  "timereceived": 1658462283
+},
+```
+
+So the first number is mis-calculated.  
+Where is 556776998 coming from?  
+
+Am I looking at `self.thorchain_state.handle`?  
+Or `self.broadcast_simulator(out)`?  
+
+Outbound in hex:  
+`01000000010eb21a3234c3a8250dc0309f6bf3119ffa302d27fb7fb8ddb29541778fd7b254000000006a4730440220379a3c5df696893ef4095b242247220829ceea85e4a903c9fdea67f1477d2a69022075eceb368656b622fd7e7314ade908d4d29ade2fdf74d7398b2f54a1eeb598730121020569e5e356ecf4fba59eb70d511729ec0b724d7166da3eae824660158887d3d3ffffffff0396bc4821000000001976a9140026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd88ac4c2ac75c030000001976a91444d0c5c98fb4cc549d86dd0da3003547f3dc98fa88ac0000000000000000466a444f55543a3236464231363036304645374337323338383742323044304337464333333936463235324345313541334445453639424541443832463034454444393432394500000000`
+
+
+--------------------------------------------------
+
+
+Here's a command to keep trying the p2pid url until it works and then make a
+sound:
+
+```bash
+bash
+while [ $(curl -s http://localhost:6040/p2pid &> /dev/null && echo "$?") -ne "0" ]; do sleep 1 done; echo "done"; afplay /System/Library/Sounds/Funk.aiff
+while [ $(curl -s http://localhost:6040/p2pid &> /dev/null && echo "$?") -ne "0" ]; do sleep 1 done; echo "done";
+while [ $(curl -s http://localhost:6040/p2pid &> /dev/null && echo "$?") -ne "0" ]; do sleep 1 done
+```
+
+### 22.07.2022 Friday
+
+heimdall gave me some hints last night a bit after I'd finished, so time to try
+them out now.
+
+1. I'm using doge code in heimdall at `scan_blocks` which doesn't use
+  `getblockstats` like the others do. Will try re-working from litecoin.
+2. I may have a bad value for `self.dash_estimate_size = 261`. He said I need
+  to set that to the size of a standard bifrost out tx with 1 input and 3 outputs.
+  I believe that came to 304 when I tried. Need to confirm.
+
+```bash
+timeout 300 bash -c 'while [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' http://localhost:6040/p2pid)" != "200" ]]; do sleep 5; done' && afplay /System/Library/Sounds/Funk.aiff
+```
+
+```
+dash-cli listtransactions "*" 99999999
+dash-cli getrawtransaction 722602f4b5c8aeb6d8361419e025f95d5c62800be70bfc086cf0421b64609e2d
+0100000001effe324c0f9c173b9f8738a8a9d6264b0038a5989ba350863f3db18723999fb3000000006b483045022100d7572d7ace078acd1e503b48e2cad85c6e9599e91aac27d5959db459ce42fb050220402685105b197ac95db4e426ba891ac42f64f61553a9a8ccdbf201ff4acf70ef012103c1d7eb24859f30af1f9c0140603eff181028243320ce8a8de7af23d0ee1a19a5ffffffff03bab64821000000001976a9140026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd88ac3a2dc75c030000001976a9148aea9e186c33393d516e3e8fa7bfd15cc9b00b2988ac0000000000000000466a444f55543a3444343631303244463244384635383836454232443641363444444339323441433839353934383635414332343844464136423235383038303632384536413000000000
+305 bytes
+```
+
+```
+LOGLEVEL=INFO EXPORT=data/smoke_test_balances.json EXPORT_EVENTS=data/smoke_test_events.json make test
+```
+
+`58413498`
+
+```
+{
+  "involvesWatchonly": true,
+  "address": "yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5",
+  "category": "receive",
+  "amount": 5.58413498,
+  "label": "",
+  "vout": 0,
+  "confirmations": 77,
+  "instantlock": false,
+  "instantlock_internal": false,
+  "chainlock": false,
+  "blockhash": "3b726ba83b5f76f277a36f0c7ad58990e899a57c257e63528bb15e8355ba5d17",
+  "blockindex": 1,
+  "blocktime": 1658516822,
+  "txid": "9af927e6c039de662213ff9fcc314b978be6536843c35324d795ca8db640c2a1",
+  "walletconflicts": [
+  ],
+  "time": 1658516821,
+  "timereceived": 1658516821
+},
+
+010000000119f50976fd8aa16f9acf567574efef655892d65e80df00615858ef9240d717a6000000006a47304402207168b36ebe812fe0b65a73a2121f076e185628f0d373248547c83f20238c5bff0220069b549f429d0cd6e06cb5f80f3db65828871bf62b07c7e97ac2e8c195594015012102e5fa6eca615183bb2727e20cae17f2012a2bed384b4eb5dbbf76a6f56f784f59ffffffff03bab64821000000001976a9140026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd88ac3a2dc75c030000001976a914b31546607a1524cba40cf08dd97861c9cac0344988ac0000000000000000466a444f55543a3844463445314234423839383045453539323441424646453838363836373045344137354433303534364337374445354537384237383931303133454234344400000000
+
+{
+  "txid": "9af927e6c039de662213ff9fcc314b978be6536843c35324d795ca8db640c2a1",
+  "version": 1,
+  "type": 0,
+  "size": 304,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "a617d74092ef58586100df805ed6925865efef747556cf9a6fa18afd7609f519",
+      "vout": 0,
+      "scriptSig": {
+        "asm": "304402207168b36ebe812fe0b65a73a2121f076e185628f0d373248547c83f20238c5bff0220069b549f429d0cd6e06cb5f80f3db65828871bf62b07c7e97ac2e8c195594015[ALL] 02e5fa6eca615183bb2727e20cae17f2012a2bed384b4eb5dbbf76a6f56f784f59",
+        "hex": "47304402207168b36ebe812fe0b65a73a2121f076e185628f0d373248547c83f20238c5bff0220069b549f429d0cd6e06cb5f80f3db65828871bf62b07c7e97ac2e8c195594015012102e5fa6eca615183bb2727e20cae17f2012a2bed384b4eb5dbbf76a6f56f784f59"
+      },
+      "value": 150.00000000,
+      "valueSat": 15000000000,
+      "address": "yceMHkJJ1V3uwLRfA5mTDgbib8GYQwWWLu",
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 5.58413498,
+      "valueSat": 558413498,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 0026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9140026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd88ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5"
+        ]
+      }
+    },
+    {
+      "value": 144.41459002,
+      "valueSat": 14441459002,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 b31546607a1524cba40cf08dd97861c9cac03449 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a914b31546607a1524cba40cf08dd97861c9cac0344988ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "yceMHkJJ1V3uwLRfA5mTDgbib8GYQwWWLu"
+        ]
+      }
+    },
+    {
+      "value": 0.00000000,
+      "valueSat": 0,
+      "n": 2,
+      "scriptPubKey": {
+        "asm": "OP_RETURN 4f55543a38444634453142344238393830454535393234414246464538383638363730453441373544333035343643373744453545373842373839313031334542343444",
+        "hex": "6a444f55543a38444634453142344238393830454535393234414246464538383638363730453441373544333035343643373744453545373842373839313031334542343444",
+        "type": "nulldata"
+      }
+    }
+  ],
+  "hex": "010000000119f50976fd8aa16f9acf567574efef655892d65e80df00615858ef9240d717a6000000006a47304402207168b36ebe812fe0b65a73a2121f076e185628f0d373248547c83f20238c5bff0220069b549f429d0cd6e06cb5f80f3db65828871bf62b07c7e97ac2e8c195594015012102e5fa6eca615183bb2727e20cae17f2012a2bed384b4eb5dbbf76a6f56f784f59ffffffff03bab64821000000001976a9140026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd88ac3a2dc75c030000001976a914b31546607a1524cba40cf08dd97861c9cac0344988ac0000000000000000466a444f55543a3844463445314234423839383045453539323441424646453838363836373045344137354433303534364337374445354537384237383931303133454234344400000000",
+  "blockhash": "3b726ba83b5f76f277a36f0c7ad58990e899a57c257e63528bb15e8355ba5d17",
+  "height": 367,
+  "confirmations": 112,
+  "time": 1658516822,
+  "blocktime": 1658516822,
+  "instantlock": false,
+  "instantlock_internal": false,
+  "chainlock": false
+}
+```
+
+Just remembered this too: `self.dash_estimate_size = 304 # TODO: CONFIRM`
+
+out coins not matching 557935556 DASH.DASH != 558413498 DASH.DASH
+
+There are multiple estimated sizes for dash.  I need to bruteforce which one is
+actually making a difference.
+
+Made 3 bookmarks. Here we gooooo.
+
+The fact that an estimate needs to be exact for the test to pass is absurd, but
+so is the complexity of life, who am I to take exception.  
+
+bookmark 1, init, 304  
+bookmark 2, handle withdraw1, 304  
+bookmark 3, handle withdraw2, 188  
+
+out coins not matching 558359798 DASH.DASH != 558413498 DASH.DASH
+
+-----
+
+bookmark 1, init, 330  
+bookmark 2, handle withdraw1, 304  
+bookmark 3, handle withdraw2, 188  
+
+out coins not matching 557934833 DASH.DASH != 558414998 DASH.DASH
+
+----
+
+bookmark 1, init, 330  
+bookmark 2, handle withdraw1, 304  
+bookmark 3, handle withdraw2, 188  
+
+out coins not matching 557935556 DASH.DASH != 558413498 DASH.DASH
+
+----
+
+bookmark 1, init, 330  
+bookmark 2, handle withdraw1, 304  
+bookmark 3, handle withdraw2, 188  
+
+out coins not matching 557935556 DASH.DASH != 558413498 DASH.DASH
+
+```
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': '5F91B779874ED2B19D86CC9E3BD0BD472915ED99A55CFE5BD24581180A5CEEB4'} {'id': 'F874948976F0B02184BFBD32300D6488C246711460AD1C230E7AAC5C85E7337C'} {'chain': 'DASH'} {'from': 'yVSUM22EpJCV85rUrcbSiwvfLnppNaU25R'} {'to': 'yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5'} {'coin': '558413498 DASH.DASH'} {'memo': 'OUT:5F91B779874ED2B19D86CC9E3BD0BD472915ED99A55CFE5BD24581180A5CEEB4'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event gas | {'asset': 'DASH.DASH'} {'asset_amt': '127500'} {'rune_amt': '219700'} {'transaction_count': '1'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event fee | {'tx_id': '5F91B779874ED2B19D86CC9E3BD0BD472915ED99A55CFE5BD24581180A5CEEB4'} {'coins': '255000 DASH.DASH'} {'pool_deduct': '455723'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'DASH.DASH'} {'asset_amt': '366471'} {'rune_amt': '631436'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event fee | {'tx_id': '5F91B779874ED2B19D86CC9E3BD0BD472915ED99A55CFE5BD24581180A5CEEB4'} {'coins': '732942 DASH.DASH'} {'pool_deduct': '1309832'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BNB.BNB'} {'asset_amt': '37500'} {'rune_amt': '14390497'} {'transaction_count': '1'}
+```
+
+----
+
+bookmark 1, init, 330  
+bookmark 2, handle withdraw1, 304  
+bookmark 3, handle withdraw2, 188  
+
+out coins not matching 557933063 DASH.DASH != 558414998 DASH.DASH
+
+```
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event fee | {'tx_id': 'B0610EAEBA1A037129C1724E30E3FEB1F9EEE778C6BB1F7ED96E899A4B0E25A0'} {'coins': '253500 DASH.DASH'} {'pool_deduct': '453042'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': 'B0610EAEBA1A037129C1724E30E3FEB1F9EEE778C6BB1F7ED96E899A4B0E25A0'} {'id': 'CB64C94EDA5B96421815DE13EC942E012CA37EE0AE84AF7D87E00888BA342D73'} {'chain': 'DASH'} {'from': 'yiX98sVhJHgXWKKMqZWSom12bwQbGCZ2NL'} {'to': 'yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5'} {'coin': '558414998 DASH.DASH'} {'memo': 'OUT:B0610EAEBA1A037129C1724E30E3FEB1F9EEE778C6BB1F7ED96E899A4B0E25A0'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event gas | {'asset': 'DASH.DASH'} {'asset_amt': '126750'} {'rune_amt': '218407'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'DASH.DASH'} {'asset_amt': '367717'} {'rune_amt': '633583'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BNB.BNB'} {'asset_amt': '37500'} {'rune_amt': '14390497'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event fee | {'tx_id': 'B0610EAEBA1A037129C1724E30E3FEB1F9EEE778C6BB1F7ED96E899A4B0E25A0'} {'coins': '735435 DASH.DASH'} {'pool_deduct': '1314287'}
+
+```
+
+scan_blocks avg_tx_size: 240  
+scan_blocks avg_tx_size: 295  
+scan_blocks avg_tx_size: 304  
+
+It keeps changing without me doing anything. And when I say it, I mean both 
+coin amounts in the error. The average transaction size changes too, along with
+the difference between the expected and actual result.
+
+I've been trying to work it out by reading the python code but have ended up
+following so many leads into so many classes, I'm not the best at python but
+even still there's a lot to unpack here. I feel like the best way forward is for
+me to break down every single goddamn line of code relevant to my broken test
+and understand it completely. I'll start by getting a feel of it, then try to
+make some noticable precision changes, then hopefully that will be the point
+when I can start trying to fix this.
+
+Diving deep into `handle_swap` in `thorchain.py`.
+
+On another note: there's nothing in `python-dash` regarding fees.
+
+```
+I[2022-07-23 01:53:58,984] @### sim_trigger_tx tbnb157dxmw9jz5emuf0apj4d6p3ee42ck0uwksxfff => tbnb1e0s8ufpf96frkcyrg7whsv736ugqqgaf0dzvrd [SWAP:DASH.DASH:yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5] 1.00000000 BNB.BNB | Gas 0.00037500 BNB.BNB | ID 8CCFC672EA524CC25825E4C1A522176C748963B855782FCC9F3C78DDAD74BFE1
+I[2022-07-23 01:53:58,985] @### handle_swap
+I[2022-07-23 01:53:58,985] @### tx tbnb157dxmw9jz5emuf0apj4d6p3ee42ck0uwksxfff => tbnb1e0s8ufpf96frkcyrg7whsv736ugqqgaf0dzvrd [SWAP:DASH.DASH:yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5] 1.00000000 BNB.BNB | Gas 0.00037500 BNB.BNB | ID 8CCFC672EA524CC25825E4C1A522176C748963B855782FCC9F3C78DDAD74BFE1
+I[2022-07-23 01:53:58,986] @### tx <class 'utils.common.Transaction'>
+I[2022-07-23 01:53:58,986] @### tx.memo SWAP:DASH.DASH:yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5
+I[2022-07-23 01:53:58,986] @### target_trade 0
+I[2022-07-23 01:53:58,987] @### asset DASH.DASH
+I[2022-07-23 01:53:58,987] @### source BNB.BNB
+I[2022-07-23 01:53:58,987] @### target DASH.DASH
+I[2022-07-23 01:53:58,988] @### target.get_chain() DASH
+I[2022-07-23 01:53:58,988] @### rune_fee 48911
+I[2022-07-23 01:53:58,989] SWAP 1
+I[2022-07-23 01:53:58,989] @### pool Pool BNB.BNB Rune: 157422439721 | Asset: 410150000 | Units: 118247627278 | Synth Units: 24438601696 | Synth: 140496985
+I[2022-07-23 01:53:58,990] @### emit 248.09246413 THOR.RUNE
+I[2022-07-23 01:53:58,990] @### liquidity_fee 6048822726
+I[2022-07-23 01:53:58,991] @### liquidity_fee_in_rune 6048822726
+I[2022-07-23 01:53:58,991] @### swap_slip 1960
+I[2022-07-23 01:53:58,991] @### pool Pool BNB.BNB Rune: 132613193308 | Asset: 510150000 | Units: 118247627278 | Synth Units: 18883130465 | Synth: 140496985
+I[2022-07-23 01:53:58,992] SWAP 2
+I[2022-07-23 01:53:58,993] @### pool Pool DASH.DASH Rune: 1000000000 | Asset: 15000000000 | Units: 1000000000 | Synth Units: 0 | Synth: 0
+I[2022-07-23 01:53:58,994] @### emit 5.58668498 DASH.DASH
+I[2022-07-23 01:53:58,994] @### liquidity_fee 13860144443
+I[2022-07-23 01:53:58,995] @### liquidity_fee_in_rune 924009630
+I[2022-07-23 01:53:58,995] @### swap_slip 9613
+I[2022-07-23 01:53:58,995] @### pool Pool DASH.DASH Rune: 25809246413 | Asset: 14441331502 | Units: 1000000000 | Synth Units: 0 | Synth: 0
+I[2022-07-23 01:53:58,996] @### out_tx yeuSxB2Gf3UTD62dGGQfmoETxHJRW8rLpR => yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5 [OUT:8CCFC672EA524CC25825E4C1A522176C748963B855782FCC9F3C78DDAD74BFE1] 5.58668498 DASH.DASH
+I[2022-07-23 01:53:58,997] @### tx.max_gas [<Coin 0.00366832 DASH.DASH>]
+I[2022-07-23 01:53:58,997] @### asset_fee 733665
+I[2022-07-23 01:53:58,997] @### self.dash_estimate_size 330
+I[2022-07-23 01:53:58,998] @### self.dash_tx_rate 829
+E[2022-07-23 01:54:18,780] out coins not matching 557934833 DASH.DASH != 558414998 DASH.DASH
+```
+
+Trying PyStorm to see if I can step-debug this. Would be a helluva lot faster
+than all this logging.
 
 
 
