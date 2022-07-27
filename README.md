@@ -6042,8 +6042,8 @@ Here's my attempt to work through heimdall txs here:
   PROVIDER1 trying to add 1K RUNE to the BNB pool.  
   `POOL.BNB.BNB` was created but with 0 values, probably because provider1 still  
   doesn't have any rune?  
-  Output:  
-  ```json
+  Output
+```json
 {
     "CONTRIB":
     {
@@ -6074,7 +6074,7 @@ Here's my attempt to work through heimdall txs here:
     "VAULT":
     {}
 }
-  ```
+```
 
 - 8: `PROVIDER-1 => VAULT      [ADD:BNB.BNB:PROVIDER-1] 2.50000000 BNB.BNB`  
   PROVIDER1 trying to add 2.5 BNB to BNB pool  
@@ -6085,7 +6085,7 @@ Here's my attempt to work through heimdall txs here:
   Provider 1 has 749962500 BNB which is:  
   1000000000 - 250000000 - 37500 = 749962500  
   The output is:  
-  ```json
+```json
 {
     "CONTRIB":
     {
@@ -6118,7 +6118,7 @@ Here's my attempt to work through heimdall txs here:
         "BNB.BNB": 250000000
     }
 }
-  ```
+```
   So the vault AND the pool both have BNB allocated, it's accounted for in two
   places. It still makes sense, apart from I have no idea where the 1K rune came
   from. Setup scripts?
@@ -6126,7 +6126,7 @@ Here's my attempt to work through heimdall txs here:
   Okay going to combine the aliases in heimdall and the thornode setup script
   to see if any of these match up and what address gets what:
 
-  ```js
+```js
   let aliases = {
     "MASTER": "tthor1nrsk6f4kalwwrqqyrfmxzl96hyjhe96t4gmvp2",
     "CONTRIB": "tthor1m8prd4pvqe5p3cu7tu82pn50a5f9xzxzetc35t",
@@ -6184,13 +6184,13 @@ Here's my attempt to work through heimdall txs here:
       console.log(alias[0], b.address, b.coins[0].amount / 1e8, 'RUNE')
     }
   })
-  ````
+```
 
-  ```
+```
 USER-1 tthor1z63f3mzwv3g75az80xwmhrawdqcjpaekk0kd54 50000 RUNE
 PROVIDER-1 tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 250000.000001 RUNE
 PROVIDER-2 tthor1xwusttz86hqfuk5z7amcgqsg7vp6g8zhsp5lu2 50900 RUNE
-  ```
+```
 
   Okay that solves that mystery, moving on...
 
@@ -6285,10 +6285,7 @@ Here's a command to keep trying the p2pid url until it works and then make a
 sound:
 
 ```bash
-bash
-while [ $(curl -s http://localhost:6040/p2pid &> /dev/null && echo "$?") -ne "0" ]; do sleep 1 done; echo "done"; afplay /System/Library/Sounds/Funk.aiff
-while [ $(curl -s http://localhost:6040/p2pid &> /dev/null && echo "$?") -ne "0" ]; do sleep 1 done; echo "done";
-while [ $(curl -s http://localhost:6040/p2pid &> /dev/null && echo "$?") -ne "0" ]; do sleep 1 done
+timeout 300 bash -c 'while [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' http://localhost:6040/p2pid)" != "200" ]]; do sleep 5; done' && afplay /System/Library/Sounds/Funk.aiff
 ```
 
 ### 22.07.2022 Friday
@@ -6301,10 +6298,6 @@ them out now.
 2. I may have a bad value for `self.dash_estimate_size = 261`. He said I need
   to set that to the size of a standard bifrost out tx with 1 input and 3 outputs.
   I believe that came to 304 when I tried. Need to confirm.
-
-```bash
-timeout 300 bash -c 'while [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' http://localhost:6040/p2pid)" != "200" ]]; do sleep 5; done' && afplay /System/Library/Sounds/Funk.aiff
-```
 
 ```
 dash-cli listtransactions "*" 99999999
