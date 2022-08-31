@@ -34,7 +34,8 @@ needed to be fixed before maintainers would be happy to include my code, which
 took a lot of extra time. Just waiting for that PR to actually be merged in now
 before I can move on...
 
-**Repositories**  
+**Repositories / Links**  
+<a href="https://gitlab.com/thorchain/thornode/-/tree/develop/docs/chains" target="_blank">New Chain Integrations Guide</a>  
 <a href="https://gitlab.com/thorchain/thornode" target="_blank">Thorchain Thornode</a>  
 <a href="https://gitlab.com/thorchain/devops/node-launcher" target="_blank">Thorchain Node Launcher</a>  
 <a href="https://gitlab.com/thorchain/heimdall" target="_blank">Thorchain Smoke Tests - Heimdall</a>  
@@ -100,6 +101,18 @@ before I can move on...
 [15.07.2022 Friday 7h 20m](#15072022-friday)  
 [21.07.2022 Thursday 7h](#21072022-thursday)  
 [22.07.2022 Friday 7h](#22072022-friday)  
+
+[26.07.2022 Tuesday 7h 20m](#26072022-tuesday)  
+[27.07.2022 Wednesday 8h](#27072022-wednesday)  
+[28.07.2022 Thursday 4h](#28072022-thursday)  
+[29.07.2022 Friday 7h](#29072022-friday)  
+[08.08.2022 Monday 7h](#08082022-monday)  
+[10.08.2022 Wednesday 1h](#10082022-wednesday)  
+[23.08.2022 Tuesday 7h](#23082022-tuesday)  
+[24.08.2022 Wednesday 8h](#24082022-wednesday)  
+[25.08.2022 Thursday 2h](#25082022-thursday)  
+[26.08.2022 Friday 5h](#26082022-friday)  
+[30.08.2022 Tuesday 7h](#30082022-tuesday)  
 
 
 
@@ -6546,6 +6559,2428 @@ E[2022-07-23 01:54:18,780] out coins not matching 557934833 DASH.DASH != 5584149
 Trying PyStorm to see if I can step-debug this. Would be a helluva lot faster
 than all this logging.
 
+
+### 26.07.2022 Tuesday
+
+Going to total up my hours since last payout and put in the next payment request...
+
+Okay that's done.
+
+So pycharm wasn't able to fetch the `bitcoincash` package. That's not suprising
+as it was added from a custom repo.
+
+Pycharm recommends running:
+
+```bash
+conda activate /opt/homebrew/anaconda3
+/opt/homebrew/anaconda3/bin/conda install -p /opt/homebrew/anaconda3 bitcoincash==0.1.5 -y
+```
+
+Actually `python-bitcoincash` is available via a public repo: `pypi`.  
+
+Just added anaconda bin directory to my environment in `~/.zshrc`.
+
+conda install -p /opt/homebrew/anaconda3 bitcoincash==0.1.5 -y
+
+```
+conda activate /opt/homebrew/anaconda3
+conda skeleton pypi bitcoincash
+conda build bitcoincash
+conda install --use-local bitcoincash
+
+# conda skeleton pypi git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx
+git clone --depth 1 --branch master https://gitlab.com/thorchain/bifrost/python-dogecointx.git
+conda build ./python-dogecoinx
+/opt/homebrew/anaconda3/envs/heimdall/bin/conda install git
+
+pip install git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx
+```
+
+> WARNING conda.core.path_actions:verify(958): Unable to create environments file. Path not writable.
+
+`sudo chmod 775 ~/.conda`
+
+Taken from the `Dockerfile`:
+```
+pip install git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx
+pip install git+https://gitlab.com/alexdcox/python-dashtx.git#egg=python-dashtx
+pip install -r requirements.txt
+```
+
+```
+Collecting python-dogecointx
+  Cloning https://gitlab.com/thorchain/bifrost/python-dogecointx.git to /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be
+  Running command git clone -q https://gitlab.com/thorchain/bifrost/python-dogecointx.git /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be
+  Resolved https://gitlab.com/thorchain/bifrost/python-dogecointx.git to commit a14d9420369644a83060df8c82dedc225e7b3dfd
+    ERROR: Command errored out with exit status 1:
+     command: /opt/homebrew/anaconda3/bin/python -c 'import io, os, sys, setuptools, tokenize; sys.argv[0] = '"'"'/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be/setup.py'"'"'; __file__='"'"'/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be/setup.py'"'"';f = getattr(tokenize, '"'"'open'"'"', open)(__file__) if os.path.exists(__file__) else io.StringIO('"'"'from setuptools import setup; setup()'"'"');code = f.read().replace('"'"'\r\n'"'"', '"'"'\n'"'"');f.close();exec(compile(code, __file__, '"'"'exec'"'"'))' egg_info --egg-base /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-pip-egg-info-kjh53ia3
+         cwd: /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be/
+    Complete output (9 lines):
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be/setup.py", line 6, in <module>
+        from dogecointx import __version__
+      File "/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be/dogecointx/__init__.py", line 3, in <module>
+        import dogecointx.core
+      File "/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-gwle3k43/python-dogecointx_28cf19ab5cd046849770361ae08424be/dogecointx/core/__init__.py", line 3, in <module>
+        from bitcointx.core import (
+    ModuleNotFoundError: No module named 'bitcointx'
+    ----------------------------------------
+WARNING: Discarding git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx. Command errored out with exit status 1: python setup.py egg_info Check the logs for full command output.
+ERROR: Could not find a version that satisfies the requirement python-dogecointx (unavailable) (from versions: none)
+ERROR: No matching distribution found for python-dogecointx (unavailable)
+```
+
+```
+pip install python-bitcointx
+pip install git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx
+```
+
+```
+Collecting python-dogecointx
+  Cloning https://gitlab.com/thorchain/bifrost/python-dogecointx.git to /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da
+  Running command git clone -q https://gitlab.com/thorchain/bifrost/python-dogecointx.git /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da
+  Resolved https://gitlab.com/thorchain/bifrost/python-dogecointx.git to commit a14d9420369644a83060df8c82dedc225e7b3dfd
+    ERROR: Command errored out with exit status 1:
+     command: /opt/homebrew/anaconda3/bin/python -c 'import io, os, sys, setuptools, tokenize; sys.argv[0] = '"'"'/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da/setup.py'"'"'; __file__='"'"'/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da/setup.py'"'"';f = getattr(tokenize, '"'"'open'"'"', open)(__file__) if os.path.exists(__file__) else io.StringIO('"'"'from setuptools import setup; setup()'"'"');code = f.read().replace('"'"'\r\n'"'"', '"'"'\n'"'"');f.close();exec(compile(code, __file__, '"'"'exec'"'"'))' egg_info --egg-base /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-pip-egg-info-pia8c26j
+         cwd: /private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da/
+    Complete output (19 lines):
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da/setup.py", line 6, in <module>
+        from dogecointx import __version__
+      File "/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da/dogecointx/__init__.py", line 3, in <module>
+        import dogecointx.core
+      File "/private/var/folders/rp/5t2dy0yj2sz14_kn4q_rfhb40000gn/T/pip-install-imr6unex/python-dogecointx_556e1a1de1f94eb39236ab5e888507da/dogecointx/core/__init__.py", line 3, in <module>
+        from bitcointx.core import (
+      File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/bitcointx/core/__init__.py", line 25, in <module>
+        from . import script
+      File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/bitcointx/core/script.py", line 31, in <module>
+        import bitcointx.core.key
+      File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/bitcointx/core/key.py", line 39, in <module>
+        from bitcointx.core.secp256k1 import (
+      File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/bitcointx/core/secp256k1.py", line 250, in <module>
+        _secp256k1 = load_secp256k1_library(bitcointx.util._secp256k1_library_path)
+      File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/bitcointx/core/secp256k1.py", line 235, in load_secp256k1_library
+        raise ImportError('secp256k1 library not found')
+    ImportError: secp256k1 library not found
+    ----------------------------------------
+WARNING: Discarding git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx. Command errored out with exit status 1: python setup.py egg_info Check the logs for full command output.
+ERROR: Could not find a version that satisfies the requirement python-dogecointx (unavailable) (from versions: none)
+ERROR: No matching distribution found for python-dogecointx (unavailable)
+```
+
+```
+cd /tmp
+git clone https://github.com/bitcoin-core/secp256k1.git
+cd secp256k1
+./autogen.sh
+./configure
+make
+make check
+sudo make install
+```
+
+```
+/Library/Developer/CommandLineTools/usr/bin/make  install-am
+ /opt/homebrew/bin/gmkdir -p '/usr/local/lib'
+ /bin/sh ./libtool   --mode=install /opt/homebrew/bin/ginstall -c   libsecp256k1.la '/usr/local/lib'
+libtool: install: /opt/homebrew/bin/ginstall -c .libs/libsecp256k1.0.dylib /usr/local/lib/libsecp256k1.0.dylib
+libtool: install: (cd /usr/local/lib && { ln -s -f libsecp256k1.0.dylib libsecp256k1.dylib || { rm -f libsecp256k1.dylib && ln -s libsecp256k1.0.dylib libsecp256k1.dylib; }; })
+libtool: install: /opt/homebrew/bin/ginstall -c .libs/libsecp256k1.lai /usr/local/lib/libsecp256k1.la
+libtool: install: /opt/homebrew/bin/ginstall -c .libs/libsecp256k1.a /usr/local/lib/libsecp256k1.a
+libtool: install: chmod 644 /usr/local/lib/libsecp256k1.a
+libtool: install: ranlib /usr/local/lib/libsecp256k1.a
+ /opt/homebrew/bin/gmkdir -p '/usr/local/include'
+ /opt/homebrew/bin/ginstall -c -m 644 include/secp256k1.h include/secp256k1_preallocated.h '/usr/local/include'
+ /opt/homebrew/bin/gmkdir -p '/usr/local/lib/pkgconfig'
+ /opt/homebrew/bin/ginstall -c -m 644 libsecp256k1.pc '/usr/local/lib/pkgconfig'
+```
+
+Is that enough?  
+Yes!
+
+Moving on:
+
+```
+pip install git+https://gitlab.com/alexdcox/python-dashtx.git#egg=python-dashtx
+```
+
+Cooking with gas 🧑‍🍳
+
+Now can we step debug?
+
+Nope.
+
+```
+/opt/homebrew/anaconda3/bin/python /Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py --fail-fast=True
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 11, in <module>
+    from chains.binance import Binance, MockBinance
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/chains/binance.py", line 5, in <module>
+    from utils.common import Coin, HttpClient, get_rune_asset, Asset
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/utils/common.py", line 9, in <module>
+    from thornode_proto.common import Coin as Coin_pb
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/thornode_proto/common/__init__.py", line 7, in <module>
+    import betterproto
+ModuleNotFoundError: No module named 'betterproto'
+```
+
+Maybe we need:
+
+```
+pip install -r requirements.txt
+```
+
+Amazing, I have a step debugger ✨
+
+Random notes:
+``` python
+def get_max_gas
+  dash_tx_rate = 831
+  dash_estimate_size = 330
+
+  amount = int(dash_tx_rate * 3 / 2) * dash_estimate_size # == 411180
+
+def handle_fee
+  
+def get_asset_fee("DASH")
+  self.network_fees["DASH"] = 245145
+  asset_fee = (the above) * 3 = 735435
+
+rune_fee = (using get_rune_disbursement_for_asset_add > get_share) = 1314287
+
+coin_amount = 5.58668498 DASH.DASH
+-asset_fee
+            = 5.57933063 DASH.DASH
+
+tx.max_gas = [Coin(coin.asset, int(asset_fee / 2))] = [<Coin 0.00367717 DASH.DASH>]
+
+tx.fee = Coin(coin.asset, asset_fee)
+```
+
+`out coins not matching 557933063 DASH.DASH != 558414998 DASH.DASH`
+
+55841 is the real deal right? Refresh my memory here me... yes it is.  
+Right number is actual, left is sim.
+
+Right, my current thinking is this: The estimate plus the fee rate is used to
+calculate the max gas fee. So, we might be allowing a greater fee. Using `250`
+estimate in golang and `330` in python. Will try `250` on both. Will get to
+withdraw estimates if this works...
+
+No dice.
+
+```
+558392183
+558414998
+```
+
+```
+E[2022-07-26 19:45:02,117] out coins not matching 558392183 DASH.DASH != 558414998 DASH.DASH
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event fee | {'tx_id': '9AF82DEED622089D193B5E46D4C6B826C5F9B73ADDBCBA9784CB193FA9046C2D'} {'coins': '253500 DASH.DASH'} {'pool_deduct': '453042'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event gas | {'asset': 'DASH.DASH'} {'asset_amt': '126750'} {'rune_amt': '218407'} {'transaction_count': '1'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': '9AF82DEED622089D193B5E46D4C6B826C5F9B73ADDBCBA9784CB193FA9046C2D'} {'id': 'B3EA752D3E4D3F16D4778E21660DFE76D0B57244005F5047EBB07B8649BAC0D3'} {'chain': 'DASH'} {'from': 'yPA6JzU5C3RF9Gxa9TeyLfLAminQErR6AW'} {'to': 'yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5'} {'coin': '558414998 DASH.DASH'} {'memo': 'OUT:9AF82DEED622089D193B5E46D4C6B826C5F9B73ADDBCBA9784CB193FA9046C2D'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'DASH.DASH'} {'asset_amt': '149565'} {'rune_amt': '257719'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event fee | {'tx_id': '9AF82DEED622089D193B5E46D4C6B826C5F9B73ADDBCBA9784CB193FA9046C2D'} {'coins': '299130 DASH.DASH'} {'pool_deduct': '534588'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BNB.BNB'} {'asset_amt': '37500'} {'rune_amt': '14390497'} {'transaction_count': '1'}
+E[2022-07-26 19:45:40,665] Events mismatch
+
+E[2022-07-26 19:45:40,665] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+```
+
+On the `thornode` side of things we have:
+
+```
+update network fee chain=DASH fee-rate=415 transaction-size=250
+
+handleMsgObservedTxOut request
+  Tx:="B3EA752D3E4D3F16D4778E21660DFE76D0B57244005F5047EBB07B8649BAC0D3:
+  yPA6JzU5C3RF9Gxa9TeyLfLAminQErR6AW ==> yLLFQTxaW3wybbahkhyZcrdfqoRCnfzAV5
+  (Memo: OUT:9AF82DEED622089D193B5E46D4C6B826C5F9B73ADDBCBA9784CB193FA9046C2D)
+  558414998 DASH.DASH (gas: [126750 DASH.DASH])"
+```
+
+Could it be the values in `scan_blocks`? Setting that to a fixed `250` like in
+`litecoin`...
+
+I am seeing this:  
+`max gas: [126750 DASH.DASH], however estimated gas need 136383 module=dash service=bifrost`
+
+Which is unsettling.  
+I may need to up the estimated size in `thornode`.  
+
+Okay I think I've narrowed it down a fair bit. From the thornode logs I'm seeing  
+`update network fee chain=DASH fee-rate=831 transaction-size=250`  
+and then just around the time of this failing test:  
+`update network fee chain=DASH fee-rate=415 transaction-size=250`  
+Heimdall is using the `831` fee rate instead of `415`.  
+Is it just a timing thing?  
+Going to do a bit more logging in thornode/bifrost and compare...  
+
+```bash
+export DOCKER_DEFAULT_PLATFORM=linux/amd64 && \
+docker build \
+  --progress plain \
+  --build-arg TAG=mocknet \
+  -t registry.gitlab.com/thorchain/thornode:$(git branch --show-current)-$(git rev-parse --short HEAD) \
+  -f Dockerfile \
+  ../.. && \
+docker tag registry.gitlab.com/thorchain/thornode:$(git branch --show-current)-$(git rev-parse --short HEAD) registry.gitlab.com/thorchain/thornode:mocknet && \
+makenoise
+```
+
+Wow, solved it! I copied the litecoin code which seems to caches the very first
+fee rate and just use that for the entire test. Not sure if that's a bug or
+intentional, but does seem suspicious.
+
+### 27.07.2022 Wednesday
+
+Next one, failing on the withdraw test:  
+`35 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE`
+
+```
+I[2022-07-27 14:41:47,394] 35 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE
+E[2022-07-27 14:42:06,102] out coins not matching 154161958 DASH.DASH != 154161833 DASH.DASH
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': 'C412F2B6DB13EE97EED71CBB2ED1E0A1D68940C436D6404541AB92DC6AAD3D22'} {'id': '08333633ACB911D6F0E1BAE6CAC0FD8B730D508130179483B25D013775410511'} {'chain': 'DASH'} {'from': 'ydD2mCQWCYom6Gq17PWLnXZwhx5ry76MfA'} {'to': 'yXdzzagQPwWXdZzFD2vRmsYMxgeD6o9D2L'} {'coin': '154161833 DASH.DASH'} {'memo': 'OUT:C412F2B6DB13EE97EED71CBB2ED1E0A1D68940C436D6404541AB92DC6AAD3D22'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BNB.BNB'} {'asset_amt': '37500'} {'rune_amt': '12236157'} {'transaction_count': '1'}
+E[2022-07-27 14:42:53,201] Events mismatch
+
+E[2022-07-27 14:42:53,201] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+```
+
+Checking withdrawal tx size...
+
+`dash-cli listtransactions "*" 99999999`
+
+906 chars  
+453 bytes  
+
+```
+I[2022-07-27 16:08:09,278] 48 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH] 0.00000001 THOR.RUNE
+E[2022-07-27 16:08:34,371] out coins not matching 15286979784 DASH.DASH != 15287065044 DASH.DASH
+E[2022-07-27 16:09:18,122] Events mismatch
+```
+
+```
+I[2022-07-27 16:08:09,278] 48 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH] 0.00000001 THOR.RUNE
+I[2022-07-27 16:08:14,597] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:DASH.DASH] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 37E820DF73AB2D44B464943AE933314D7146403D70E95086C30014A07D2C298B
+I[2022-07-27 16:08:14,597] @###  get_rune_fee
+I[2022-07-27 16:08:14,597] @###    chain DASH
+I[2022-07-27 16:08:14,597] @###    chain_fee 70000
+I[2022-07-27 16:08:14,597] @###    gas_asset DASH.DASH
+I[2022-07-27 16:08:14,597] @###    chain_fee * 3?! 210000
+I[2022-07-27 16:08:14,597] @###    rune_fee 316508
+I[2022-07-27 16:08:14,598] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-27 16:08:14,598] @### LAST TX ESTIMATE
+I[2022-07-27 16:08:14,598] @###  get_rune_fee
+I[2022-07-27 16:08:14,598] @###    chain DASH
+I[2022-07-27 16:08:14,598] @###    chain_fee 70000
+I[2022-07-27 16:08:14,598] @###    gas_asset DASH.DASH
+I[2022-07-27 16:08:14,598] @###    no fee for 0 asset + rune balance
+I[2022-07-27 16:08:14,598] @###  get_rune_fee
+I[2022-07-27 16:08:14,598] @###    chain THOR
+I[2022-07-27 16:08:14,598] @###    not in network fees
+I[2022-07-27 16:08:21,177] #@@@ SETTING DASH TX_RATE 388
+I[2022-07-27 16:08:21,501] #@@@ SETTING DASH TX_RATE 388
+I[2022-07-27 16:08:21,823] #@@@ SETTING DASH TX_RATE 388
+E[2022-07-27 16:08:34,371] out coins not matching 15286979784 DASH.DASH != 15287065044 DASH.DASH
+E[2022-07-27 16:09:18,122] Events mismatch
+
+E[2022-07-27 16:09:18,122] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': '37E820DF73AB2D44B464943AE933314D7146403D70E95086C30014A07D2C298B'} {'id': '7D2D25C9DFB7654C5B2D29139D24F0838697C5E79EA2F8C57E4CE798E264C6DB'} {'chain': 'DASH'} {'from': 'yMdU2uKiGvUCoGzpz2rzT31ifznodPR7by'} {'to': 'yXdzzagQPwWXdZzFD2vRmsYMxgeD6o9D2L'} {'coin': '15287065044 DASH.DASH'} {'memo': 'OUT:37E820DF73AB2D44B464943AE933314D7146403D70E95086C30014A07D2C298B'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '2747565984'} {'BNB.BNB': '-2049952514'}```
+```
+
+```json
+11:08PM INF app/x/thorchain/handler_deposit.go:59 > receive MsgDeposit coins=[{"amount":"1","asset":"THOR.RUNE"}] from=tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 memo=WITHDRAW:DASH.DASH
+11:08PM INF app/x/thorchain/handler_withdraw.go:33 > receive MsgWithdrawLiquidity withdraw address=tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 withdraw basis points=10000
+11:08PM INF app/x/thorchain/withdraw_current.go:60 > pool before withdraw balance RUNE=23040506632 balance asset=15287170044 pool units=990000000
+11:08PM INF app/x/thorchain/withdraw_current.go:61 > liquidity provider before withdraw liquidity provider unit=990000000
+11:08PM INF app/x/thorchain/withdraw_current.go:92 > imp loss calculation deposit value=23371612980 protection=0 redeem value=46081013264
+11:08PM INF app/x/thorchain/withdraw_current.go:142 > client withdraw RUNE=23040506632 asset=15287065044 units left=0
+11:08PM INF app/x/thorchain/withdraw_current.go:148 > pool after withdraw balance RUNE=0 balance asset=105000 pool unit=0
+11:08PM INF app/x/thorchain/handler_outbound_tx.go:50 > receive MsgOutboundTx request outbound tx hash=0000000000000000000000000000000000000000000000000000000000000000
+11:08PM INF go/pkg/mod/github.com/tendermint/tendermint@v0.34.14/state/execution.go:333 > executed block height=175 module=state num_invalid_txs=0 num_valid_txs=1
+11:08PM INF go/pkg/mod/github.com/tendermint/tendermint@v0.34.14/state/execution.go:333 > executed block height=176 module=state num_invalid_txs=0 num_valid_txs=0
+11:08PM INF go/pkg/mod/github.com/tendermint/tendermint@v0.34.14/state/execution.go:333 > executed block height=177 module=state num_invalid_txs=0 num_valid_txs=0
+11:08PM INF app/x/thorchain/handler_network_fee.go:113 > update network fee chain=DASH fee-rate=388 transaction-size=250
+11:08PM INF go/pkg/mod/github.com/tendermint/tendermint@v0.34.14/state/execution.go:333 > executed block height=178 module=state num_invalid_txs=0 num_valid_txs=1
+11:08PM INF app/x/thorchain/handler_observed_txout.go:171 > handleMsgObservedTxOut request Tx:="7D2D25C9DFB7654C5B2D29139D24F0838697C5E79EA2F8C57E4CE798E264C6DB: yMdU2uKiGvUCoGzpz2rzT31ifznodPR7by ==> yXdzzagQPwWXdZzFD2vRmsYMxgeD6o9D2L (Memo: OUT:37E820DF73AB2D44B464943AE933314D7146403D70E95086C30014A07D2C298B) 15287065044 DASH.DASH (gas: [105000 DASH.DASH])"
+```
+
+15287065044 - 15286979784  
+0.00000853 out
+
+I'm going to up the extimated size from `250` to `304`.  
+Now failing on a swap. Did I not run the make test exports??  
+
+Time to clarify a few things.  
+The python sim expects the following:
+```
+expected gas = estimated tx size * fee rate
+max gas = expected gas * 1.5
+asset fee = expected gas * 3
+outbound amount = pool emitted amount - asset fee
+```
+
+Go managed to calculate an asset fee of `136383` from a tx size of `304` and
+rate of `338`. I can only get to `136...` with completely different numbers.
+
+This is what I, and the python sim expect:
+```
+fee rate = 338
+tx size = 304
+emit asset = 558668498
+expected gas = fee rate * tx size = 338 * 304 = 102752
+max gas = expected gas * 1.5 = 102752 * 1.5 = 154128
+asset fee = expected gas * 3 = 102752 * 3 = 308256
+expected send = emit asset - asset fee = 558668498 - 308256 = 558360242
+
+actual send = 558377987
+actual gas = 136383
+last reported fee rate = 338
+last reported tx size = 304
+```
+
+Going to run all this again, see if anything stands out.
+
+```
+out coins not matching 558360242 DASH.DASH != 558377987 DASH.DASH
+
+python:
+emit = 558668498
+asset fee = 338 * 304 * 3 = 308256
+
+me:
+expected send = 558668498 - 308256 = 558360242
+
+thornode:
+rate = 338
+tx size = 304
+emit = 558668498
+```
+
+Ah getting this from bifrost due to the logging I added:  
+`gas coin 136383 DASH.DASH for size 269`  
+
+338 * 269 * 1.5 = 136383  
+Right!  
+
+There's also this:  
+`signer.go:398 > estimate:269, final size: 304, final vbyte: 304`  
+
+So my estimate tx needs to be BANG on.
+
+This is the very tx that caused the fail:
+`0100000001f08afb13db95f06ef4de6bf427abb3fe972f82a7749e2b4fdbfe53062e03e32c000000006a473044022050ec89c9d4d21892ab1c45e0bf5c5c65d6b88c00841352cfac9e34acc577af3d02206c3760e989d04a2e3957de5edb8a829e466d3c83cf114d322b0a6c487c22485201210205db9f350f4df76738e6115bc24a8a79c76f362c6a9e6e86b687e78c8c59a739ffffffff03032c4821000000001976a9140026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd88ac3e95c75c030000001976a914bcb3678aa2c9139c12281110a39b3980b92823f188ac0000000000000000466a444f55543a4543313135333443393834393839344343344231413542373046363937344237304642464136383636444333334335364538414238424632434545424430324600000000`
+
+Let's break it down...
+
+```
+01000000                                                                        version
+
+01                                                                              number of inputs
+
+  f08afb13db95f06ef4de6bf427abb3fe972f82a7749e2b4fdbfe53062e03e32c              outpoint txid
+  00000000                                                                      outpoint index number
+  6a                                                                            bytes in sig script: 106
+    47                                                                          push 71 bytes as data
+    3044022050ec89c9d4d21892ab1c45e0bf5c5c65d6b88c00
+    841352cfac9e34acc577af3d02206c3760e989d04a2e3957
+    de5edb8a829e466d3c83cf114d322b0a6c487c2248520121
+    0205db9f350f4df76738e6115bc24a8a79c76f362c6a9e6e
+    86b687e78c8c59a739                                                          sig script
+  ffffffff                                                                      sequence number
+
+03                                                                              number of outputs
+
+  032c482100000000
+  19
+  76
+  a9
+  14
+  0026dcfac0cd2092ea5a124f2089c3ad5b7aa2cd
+  88
+  ac
+
+  3e95c75c03000000
+  19
+  76
+  a9
+  14
+  bcb3678aa2c9139c12281110a39b3980b92823f1
+  88
+  ac
+
+  0000000000000000
+  46
+    6a                                                                          op_return
+    44                                                                          num of bytes: 68
+    4f55543a4543313135333443393834393839344343344231
+    413542373046363937344237304642464136383636444333
+    3343353645384142384246324345454244303246                                    memo
+
+00000000                                                                        locktime
+```
+
+The memo decoded is:
+`OUT:EC11534C9849894CC4B1A5B70F6974B70FBFA6866DC33C56E8AB8BF2CEEBD02F`
+
+We do have the length of the memo when estimating this though so no issues there.
+
+```
+| Section              | Bytes                 |
+|----------------------|-----------------------|
+| version              |   4                   |
+| input count          |   1                   |
+| input 1              | 147                   |
+| output count         |   1                   |
+| output 1:n-1         |  34                   |
+| output n (memo)      |  11 + len(memo bytes) |
+| locktime             |   4                   |
+```
+
+So for that memo above:
+`4 + 1 + 147 + 1 + 34 + 34 + 11 + 68 + 4 = 304`
+
+For tomorrow:
+- I could try attaching a golang step-debugger to the go binary running within
+  docker (if I need to, waiting on recent test)
+- All the other chains seem to assume 1 txout. Perhaps I should update my
+  estimates in both TC and H to match...?
+
+```
+I[2022-07-27 22:45:25,758] 48 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH] 0.00000001 THOR.RUNE
+I[2022-07-27 22:45:29,205] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:DASH.DASH] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 37E820DF73AB2D44B464943AE933314D7146403D70E95086C30014A07D2C298B
+I[2022-07-27 22:45:29,206] @###  get_rune_fee
+I[2022-07-27 22:45:29,206] @###    chain DASH
+I[2022-07-27 22:45:29,206] @###    chain_fee 103360
+I[2022-07-27 22:45:29,206] @###    gas_asset DASH.DASH
+I[2022-07-27 22:45:29,206] @###    chain_fee * 3?! 310080
+I[2022-07-27 22:45:29,206] @###    rune_fee 467343
+I[2022-07-27 22:45:29,206] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-27 22:45:29,206] @### LAST TX ESTIMATE?
+I[2022-07-27 22:45:29,206] @###  get_rune_fee
+I[2022-07-27 22:45:29,206] @###    chain DASH
+I[2022-07-27 22:45:29,206] @###    chain_fee 103360
+I[2022-07-27 22:45:29,206] @###    gas_asset DASH.DASH
+I[2022-07-27 22:45:29,206] @###    no fee for 0 asset + rune balance
+I[2022-07-27 22:45:29,206] @###  get_rune_fee
+I[2022-07-27 22:45:29,206] @###    chain THOR
+I[2022-07-27 22:45:29,207] @###    not in network fees
+I[2022-07-27 22:45:36,330] @### SETTING DASH TX_RATE 574
+I[2022-07-27 22:45:36,647] @### SETTING DASH TX_RATE 574
+I[2022-07-27 22:45:36,964] @### SETTING DASH TX_RATE 574
+E[2022-07-27 22:45:44,210] out coins not matching 15286994775 DASH.DASH != 15287070765 DASH.DASH
+E[2022-07-27 22:46:32,737] Events mismatch
+
+E[2022-07-27 22:46:32,737] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+```
+
+```
+I[2022-07-27 22:58:38,666] 35 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE
+I[2022-07-27 22:58:43,460] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID C412F2B6DB13EE97EED71CBB2ED1E0A1D68940C436D6404541AB92DC6AAD3D22
+I[2022-07-27 22:58:43,461] @###  get_rune_fee
+I[2022-07-27 22:58:43,461] @###    chain DASH
+I[2022-07-27 22:58:43,461] @###    chain_fee 102448
+I[2022-07-27 22:58:43,461] @###    gas_asset DASH.DASH
+I[2022-07-27 22:58:43,461] @###    chain_fee * 3?! 307344
+I[2022-07-27 22:58:43,461] @###    rune_fee 463228
+I[2022-07-27 22:58:43,461] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-27 22:58:43,462] @###  get_rune_fee
+I[2022-07-27 22:58:43,462] @###    chain DASH
+I[2022-07-27 22:58:43,462] @###    chain_fee 102448
+I[2022-07-27 22:58:43,462] @###    gas_asset DASH.DASH
+I[2022-07-27 22:58:43,462] @###    chain_fee * 3?! 307344
+I[2022-07-27 22:58:43,462] @###    rune_fee 463228
+I[2022-07-27 22:58:43,462] @### tx.max_gas [<Coin 0.00153672 DASH.DASH>]
+I[2022-07-27 22:58:43,462] @### asset_fee 307344
+I[2022-07-27 22:58:43,462] @### self.dash_estimate_size 270
+I[2022-07-27 22:58:43,462] @### self.dash_tx_rate 337
+I[2022-07-27 22:58:43,462] @###  get_rune_fee
+I[2022-07-27 22:58:43,462] @###    chain THOR
+I[2022-07-27 22:58:43,462] @###    not in network fees
+I[2022-07-27 22:58:46,075] @### SETTING DASH TX_RATE 339
+I[2022-07-27 22:58:46,436] @### SETTING DASH TX_RATE 339
+I[2022-07-27 22:58:46,764] @### SETTING DASH TX_RATE 339
+E[2022-07-27 22:58:48,461] out coins not matching 154124843 DASH.DASH != 154107521 DASH.DASH
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': 'C412F2B6DB13EE97EED71CBB2ED1E0A1D68940C436D6404541AB92DC6AAD3D22'} {'id': '40C1679F333B0932DB7A769291D316501F594CF51EA8252F3F8024A80D4B05B6'} {'chain': 'DASH'} {'from': 'yRfkPr1fKosu7tqtMtZe1bxAENYqTQsG4z'} {'to': 'yXdzzagQPwWXdZzFD2vRmsYMxgeD6o9D2L'} {'coin': '154107521 DASH.DASH'} {'memo': 'OUT:C412F2B6DB13EE97EED71CBB2ED1E0A1D68940C436D6404541AB92DC6AAD3D22'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BNB.BNB'} {'asset_amt': '37500'} {'rune_amt': '12236157'} {'transaction_count': '1'}
+E[2022-07-27 22:59:45,840] Events mismatch
+
+E[2022-07-27 22:59:45,841] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatchcoun
+```
+
+Withdraw
+estimate:451, final size: 452, final vbyte: 452 module
+
+max gas: [153672 DASH.DASH], however estimated gas need 227755
+
+Check the heimdall logs I saved tomorra too..
+
+### 28.07.2022 Thursday
+
+Right so onto this `insolvency detected` message.
+
+`ctr opt cmd +` google sheets shortcut to add rows.
+
+This is the last tx estimate. I'm not convinced the insolvency is actually an
+issue.
+
+By the way I'm doing a shit load of calculations in google sheets:  
+https://docs.google.com/spreadsheets/d/1vbdrHDP114pDDUGB3viRMxjZySRPMddp-oBQMmOru9k/edit#gid=555730262
+
+Going to step debug the last tx segment...
+
+Yep, setting the very last tx estimate to `304` did the trick. All tests passing.
+
+Now I have to do all these tests... but with ALL THE COINS.
+
+Also remove the copious amounts of garbage logging I added.
+
+Running the entire thing!
+
+```
+I[2022-07-28 16:47:51,404] 96 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE
+E[2022-07-28 16:48:05,231] out coins not matching 134584517 DASH.DASH != 134584365 DASH.DASH
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': 'E21285A360447B8EF7F5E82E96B5647881609320A107B82EE082247F8F84C2C6'} {'id': '364CAAC1304A3F23892200DC5B0B8F1E74A8FD9D767EEA73DE18843AA47F6AF5'} {'chain': 'DASH'} {'from': 'yWHWB7gnUXRtLx3z8oeiNnsXP6n4g5Th8G'} {'to': 'yXdzzagQPwWXdZzFD2vRmsYMxgeD6o9D2L'} {'coin': '134584365 DASH.DASH'} {'memo': 'OUT:E21285A360447B8EF7F5E82E96B5647881609320A107B82EE082247F8F84C2C6'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'GAIA.ATOM'} {'asset_amt': '3015000'} {'rune_amt': '96754'} {'transaction_count': '1'}
+E[2022-07-28 16:49:01,284] Events mismatch
+
+E[2022-07-28 16:49:01,284] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 645, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 571, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+```
+
+Damn. Luckily I kept the branch with all my logging. Back to the drawing board.
+
+```
+I[2022-07-28 17:41:39,429] 87 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE
+I[2022-07-28 17:41:44,238] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 7B0024C3D1A615A69FA1ACC00F7896F76FBB7CF9DEBD99351F2AD00C514F0330
+I[2022-07-28 17:41:44,238] @###  get_rune_fee
+I[2022-07-28 17:41:44,238] @###    chain BTC
+I[2022-07-28 17:41:44,238] @###    chain_fee 475000
+I[2022-07-28 17:41:44,238] @###    gas_asset BTC.BTC
+I[2022-07-28 17:41:44,238] @###    chain_fee * 3?! 1425000
+I[2022-07-28 17:41:44,238] @###    rune_fee 984569458
+I[2022-07-28 17:41:44,238] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-28 17:41:44,238] @###  get_rune_fee
+I[2022-07-28 17:41:44,238] @###    chain BTC
+I[2022-07-28 17:41:44,238] @###    chain_fee 475000
+I[2022-07-28 17:41:44,238] @###    gas_asset BTC.BTC
+I[2022-07-28 17:41:44,238] @###    chain_fee * 3?! 1425000
+I[2022-07-28 17:41:44,238] @###    rune_fee 984569456
+I[2022-07-28 17:41:44,238] @###  get_rune_fee
+I[2022-07-28 17:41:44,238] @###    chain THOR
+I[2022-07-28 17:41:44,238] @###    not in network fees
+E[2022-07-28 17:42:49,253] failed to send all outbound transactions 2
+E[2022-07-28 17:42:49,253] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+```
+
+That just happens sometimes. Restart required...
+
+```
+I[2022-07-28 19:17:32,769] 87 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE
+I[2022-07-28 19:17:36,320] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 7B0024C3D1A615A69FA1ACC00F7896F76FBB7CF9DEBD99351F2AD00C514F0330
+I[2022-07-28 19:17:36,320] @###  get_rune_fee
+I[2022-07-28 19:17:36,320] @###    chain BTC
+I[2022-07-28 19:17:36,320] @###    chain_fee 475000
+I[2022-07-28 19:17:36,320] @###    gas_asset BTC.BTC
+I[2022-07-28 19:17:36,320] @###    chain_fee * 3?! 1425000
+I[2022-07-28 19:17:36,320] @###    rune_fee 984569458
+I[2022-07-28 19:17:36,321] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-28 19:17:36,321] @###  get_rune_fee
+I[2022-07-28 19:17:36,321] @###    chain BTC
+I[2022-07-28 19:17:36,321] @###    chain_fee 475000
+I[2022-07-28 19:17:36,321] @###    gas_asset BTC.BTC
+I[2022-07-28 19:17:36,321] @###    chain_fee * 3?! 1425000
+I[2022-07-28 19:17:36,321] @###    rune_fee 984569456
+I[2022-07-28 19:17:36,321] @###  get_rune_fee
+I[2022-07-28 19:17:36,321] @###    chain THOR
+I[2022-07-28 19:17:36,321] @###    not in network fees
+E[2022-07-28 19:18:41,959] failed to send all outbound transactions 2
+E[2022-07-28 19:18:41,959] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+```
+
+Hmm the same test. Now I'm sus.
+
+```go
+   gasCoin := c.getGasCoin(tx, totalSize)
++  fmt.Printf("@### gas coin %v for size %v\n", gasCoin, totalSize)
+   gasAmtSats := gasCoin.Amount.Uint64()
+
+AND
+
+        if c.lastFeeRate != uint64(feeRate) {
+                c.m.GetCounter(metrics.GasPriceChange(common.DASHChain)).Inc()
+        }
++       fmt.Printf("### SEND NETWORK FEE block: %v feeRate: %v minRelayFeeSats: %v\n", height, feeRate, c.minRelayFeeSats)
+```
+
+Got to `96` with everything. Stuck on the dash withdrawal again. Hmm.
+
+```
+I[2022-07-28 20:32:28,221] 96 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE
+I[2022-07-28 20:32:30,198] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID E21285A360447B8EF7F5E82E96B5647881609320A107B82EE082247F8F84C2C6
+I[2022-07-28 20:32:30,198] @###  get_rune_fee
+I[2022-07-28 20:32:30,198] @###    chain DASH
+I[2022-07-28 20:32:30,198] @###    chain_fee 102448
+I[2022-07-28 20:32:30,198] @###    gas_asset DASH.DASH
+I[2022-07-28 20:32:30,198] @###    chain_fee * 3?! 307344
+I[2022-07-28 20:32:30,198] @###    rune_fee 86152
+I[2022-07-28 20:32:30,198] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-28 20:32:30,198] @###  get_rune_fee
+I[2022-07-28 20:32:30,198] @###    chain DASH
+I[2022-07-28 20:32:30,198] @###    chain_fee 102448
+I[2022-07-28 20:32:30,198] @###    gas_asset DASH.DASH
+I[2022-07-28 20:32:30,198] @###    chain_fee * 3?! 307344
+I[2022-07-28 20:32:30,198] @###    rune_fee 86152
+I[2022-07-28 20:32:30,199] @### tx.max_gas [<Coin 0.00153672 DASH.DASH>]
+I[2022-07-28 20:32:30,199] @### asset_fee 307344
+I[2022-07-28 20:32:30,199] @### self.dash_estimate_size 304
+I[2022-07-28 20:32:30,199] @### self.dash_tx_rate 337
+I[2022-07-28 20:32:30,199] @###  get_rune_fee
+I[2022-07-28 20:32:30,199] @###    chain THOR
+I[2022-07-28 20:32:30,199] @###    not in network fees
+I[2022-07-28 20:32:36,129] @### SETTING DASH TX_RATE 339
+I[2022-07-28 20:32:36,458] @### SETTING DASH TX_RATE 339
+I[2022-07-28 20:32:36,791] @### SETTING DASH TX_RATE 339
+E[2022-07-28 20:32:40,367] out coins not matching 134585593 DASH.DASH != 134585441 DASH.DASH
+E[2022-07-28 20:33:35,896] Events mismatch
+
+E[2022-07-28 20:33:35,896] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+```
+
+### 29.07.2022 Friday
+
+Unfortunately my laptop updated/restarted and my terminal sessions were cleared
+so have to re-run the last test...
+
+```
+/opt/homebrew/anaconda3/bin/python /Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py --fast-fail=True
+Traceback (most recent call last):
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/web3/contract.py", line 1498, in call_contract_function
+    output_data = web3.codec.decode_abi(output_types, return_data)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/codec.py", line 196, in decode_abi
+    return self.decode(types, data)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/codec.py", line 210, in decode
+    return decoder(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 127, in __call__
+    return self.decode(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_utils/functional.py", line 45, in inner
+    return callback(fn(*args, **kwargs))
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 173, in decode
+    yield decoder(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 127, in __call__
+    return self.decode(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 142, in decode
+    start_pos = decode_uint_256(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 127, in __call__
+    return self.decode(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 198, in decode
+    raw_data = self.read_data_from_stream(stream)
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/eth_abi/decoding.py", line 305, in read_data_from_stream
+    raise InsufficientDataBytes(
+eth_abi.exceptions.InsufficientDataBytes: Tried to read 32 bytes.  Only got 0 bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 675, in <module>
+    main()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 123, in main
+    smoker = Smoker(
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 225, in __init__
+    self.mock_ethereum = MockEthereum(eth)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/chains/ethereum.py", line 62, in __init__
+    symbol = token.functions.symbol().call()
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/web3/contract.py", line 949, in call
+    return call_contract_function(
+  File "/opt/homebrew/anaconda3/lib/python3.9/site-packages/web3/contract.py", line 1520, in call_contract_function
+    raise BadFunctionCallOutput(msg) from e
+web3.exceptions.BadFunctionCallOutput: Could not transact with/call contract function, is contract deployed correctly and chain synced?
+
+Process finished with exit code 1
+```
+
+That's new.
+
+```
+I[2022-07-29 13:15:28,399] 114 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE
+I[2022-07-29 13:15:31,321] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 6ADEE92FEBC2759EE757C8FAD296FD3FA559CE86EFE36CDD83CA538672066A8D
+I[2022-07-29 13:15:31,322] @###  get_rune_fee
+I[2022-07-29 13:15:31,322] @###    chain BTC
+I[2022-07-29 13:15:31,322] @###    chain_fee 634000
+I[2022-07-29 13:15:31,322] @###    gas_asset BTC.BTC
+I[2022-07-29 13:15:31,322] @###    chain_fee * 3?! 1902000
+I[2022-07-29 13:15:31,322] @###    rune_fee 1155803208
+I[2022-07-29 13:15:31,322] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-29 13:15:31,322] @### rune_amt $111334217618
+I[2022-07-29 13:15:31,322] @### asset_amt $183212575
+I[2022-07-29 13:15:31,322] @### emit_asset $183212575
+I[2022-07-29 13:15:31,322] @### outbound_asset_amt $183212575
+I[2022-07-29 13:15:31,322] @###  get_rune_fee
+I[2022-07-29 13:15:31,322] @###    chain BTC
+I[2022-07-29 13:15:31,322] @###    chain_fee 634000
+I[2022-07-29 13:15:31,322] @###    gas_asset BTC.BTC
+I[2022-07-29 13:15:31,322] @###    no fee for 0 asset + rune balance
+I[2022-07-29 13:15:31,322] @###  get_rune_fee
+I[2022-07-29 13:15:31,322] @###    chain THOR
+I[2022-07-29 13:15:31,322] @###    not in network fees
+E[2022-07-29 13:16:37,471] failed to send all outbound transactions 2
+E[2022-07-29 13:16:37,471] Smoke tests failed
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+Traceback (most recent call last):
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/Users/adc/go/src/gitlab.com/thorchain/heimdall/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+```
+
+Which one failed? Why did it fail?  
+It's easy to let frustration cloud your judgement, so I'm going to take 5.  
+
+In past runs, this has just randomly come up. So I'm going to just re-run and
+see...
+
+Going to run outside of the IDE and see if that helps.
+
+Got to `119`. Didn't say that it worked, but the return code was `0` and we start
+at `0`. That looks good.
+
+Now onto my clean branch without all the logging (again).
+
+```
+I[2022-07-29 21:47:05,437] 93 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE
+E[2022-07-29 21:48:27,849] failed to send all outbound transactions 2
+E[2022-07-29 21:48:27,850] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 645, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 573, in sim_catch_up
+    self.error(msg)
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+make: *** [smoke] Error 1
+```
+
+Argh. `93` for no apparent reason...
+
+Nope. No luck. There are no differences apart from logging, as far as I can tell.
+How in the name of Hades is this happening?
+
+If at first you don't succeed, bash your head against the wall until your brains
+slop out and everything becomes irrelevant. I wouldn't mind so much if these
+tests took a few minutes to run instead of 30. It's hard to stay focused.
+
+```
+I[2022-07-29 23:34:39,650] 114 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE
+I[2022-07-29 23:34:42,414] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 6ADEE92FEBC2759EE757C8FAD296FD3FA559CE86EFE36CDD83CA538672066A8D
+I[2022-07-29 23:34:42,415] @###  get_rune_fee
+I[2022-07-29 23:34:42,415] @###    chain BTC
+I[2022-07-29 23:34:42,415] @###    chain_fee 631000
+I[2022-07-29 23:34:42,416] @###    gas_asset BTC.BTC
+I[2022-07-29 23:34:42,416] @###    chain_fee * 3?! 1893000
+I[2022-07-29 23:34:42,416] @###    rune_fee 1150351878
+I[2022-07-29 23:34:42,416] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-29 23:34:42,417] @### rune_amt $111335025965
+I[2022-07-29 23:34:42,417] @### asset_amt $183211075
+I[2022-07-29 23:34:42,417] @### emit_asset $183211075
+I[2022-07-29 23:34:42,417] @### outbound_asset_amt $183211075
+I[2022-07-29 23:34:42,418] @###  get_rune_fee
+I[2022-07-29 23:34:42,418] @###    chain BTC
+I[2022-07-29 23:34:42,419] @###    chain_fee 631000
+I[2022-07-29 23:34:42,419] @###    gas_asset BTC.BTC
+I[2022-07-29 23:34:42,419] @###    no fee for 0 asset + rune balance
+I[2022-07-29 23:34:42,419] @###  get_rune_fee
+I[2022-07-29 23:34:42,420] @###    chain THOR
+I[2022-07-29 23:34:42,420] @###    not in network fees
+E[2022-07-29 23:36:08,732] failed to send all outbound transactions 2
+E[2022-07-29 23:36:08,732] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+make: *** [smoke] Error 1
+```
+
+Will that same thing happen again? I've already passed this without doing anything...
+
+```
+I[2022-07-30 00:16:26,249] 114 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE
+I[2022-07-30 00:16:26,993] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 6ADEE92FEBC2759EE757C8FAD296FD3FA559CE86EFE36CDD83CA538672066A8D
+I[2022-07-30 00:16:26,995] @###  get_rune_fee
+I[2022-07-30 00:16:26,995] @###    chain BTC
+I[2022-07-30 00:16:26,996] @###    chain_fee 632000
+I[2022-07-30 00:16:26,996] @###    gas_asset BTC.BTC
+I[2022-07-30 00:16:26,996] @###    chain_fee * 3?! 1896000
+I[2022-07-30 00:16:26,997] @###    rune_fee 1152174939
+I[2022-07-30 00:16:26,998] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-30 00:16:26,998] @### rune_amt $111335025965
+I[2022-07-30 00:16:26,999] @### asset_amt $183211075
+I[2022-07-30 00:16:26,999] @### emit_asset $183211075
+I[2022-07-30 00:16:26,999] @### outbound_asset_amt $183211075
+I[2022-07-30 00:16:27,000] @###  get_rune_fee
+I[2022-07-30 00:16:27,000] @###    chain BTC
+I[2022-07-30 00:16:27,001] @###    chain_fee 632000
+I[2022-07-30 00:16:27,001] @###    gas_asset BTC.BTC
+I[2022-07-30 00:16:27,001] @###    no fee for 0 asset + rune balance
+I[2022-07-30 00:16:27,002] @###  get_rune_fee
+I[2022-07-30 00:16:27,002] @###    chain THOR
+I[2022-07-30 00:16:27,003] @###    not in network fees
+E[2022-07-30 00:17:49,871] failed to send all outbound transactions 2
+E[2022-07-30 00:17:49,876] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+make: *** [smoke] Error 1
+```
+
+Going to try upping the default bitcoin block scanner backoff from 1s to 5s...
+
+```
+I[2022-07-30 00:51:25,326] 93 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE
+I[2022-07-30 00:51:30,440] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC:1000] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID A8356ECC701C09BF7EA7F4A95B86F55BA1A90E79F866D1AD1372A13BF1661F9F
+I[2022-07-30 00:51:30,441] @###  get_rune_fee
+I[2022-07-30 00:51:30,442] @###    chain BTC
+I[2022-07-30 00:51:30,442] @###    chain_fee 619000
+I[2022-07-30 00:51:30,442] @###    gas_asset BTC.BTC
+I[2022-07-30 00:51:30,443] @###    chain_fee * 3?! 1857000
+I[2022-07-30 00:51:30,443] @###    rune_fee 1283049462
+I[2022-07-30 00:51:30,444] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-30 00:51:30,444] @### rune_amt $13163488619
+I[2022-07-30 00:51:30,444] @### asset_amt $19051953
+I[2022-07-30 00:51:30,444] @### emit_asset $19051953
+I[2022-07-30 00:51:30,445] @### outbound_asset_amt $19051953
+I[2022-07-30 00:51:30,445] @###  get_rune_fee
+I[2022-07-30 00:51:30,446] @###    chain BTC
+I[2022-07-30 00:51:30,446] @###    chain_fee 619000
+I[2022-07-30 00:51:30,446] @###    gas_asset BTC.BTC
+I[2022-07-30 00:51:30,447] @###    chain_fee * 3?! 1857000
+I[2022-07-30 00:51:30,448] @###    rune_fee 1283049460
+I[2022-07-30 00:51:30,448] @###  get_rune_fee
+I[2022-07-30 00:51:30,449] @###    chain THOR
+I[2022-07-30 00:51:30,449] @###    not in network fees
+E[2022-07-30 00:52:15,956] out coins not matching 17886813 BTC.BTC != 18157893 BTC.BTC
+E[2022-07-30 00:52:45,380] Events mismatch
+
+E[2022-07-30 00:52:45,381] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/app/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610088'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event gas | {'asset': 'BTC.BTC'} {'asset_amt': '712500'} {'rune_amt': '484686048'} {'transaction_count': '1'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610110'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610176'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610028'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610006'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610220'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610050'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610154'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697609984'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610132'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event fee | {'tx_id': 'A8356ECC701C09BF7EA7F4A95B86F55BA1A90E79F866D1AD1372A13BF1661F9F'} {'coins': '1425000 BTC.BTC'} {'pool_deduct': '976941226'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610242'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610198'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': 'A8356ECC701C09BF7EA7F4A95B86F55BA1A90E79F866D1AD1372A13BF1661F9F'} {'id': '58A196E5C31623777D07659D92B2BF60313F9D2888C38C865671F9F263DB0C02'} {'chain': 'BTC'} {'from': 'bcrt1qql2tdn42x0ze26mkwh5fl9aa3n5t5hj0uu583u'} {'to': 'bcrt1q0s4mg25tu6termrk8egltfyme4q7sg3h8kkydt'} {'coin': '18157893 BTC.BTC'} {'memo': 'OUT:A8356ECC701C09BF7EA7F4A95B86F55BA1A90E79F866D1AD1372A13BF1661F9F'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697609962'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610265'}
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event rewards | {'bond_reward': '697610287'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610119'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610055'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610163'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BNB.BNB'} {'asset_amt': '37500'} {'rune_amt': '1063214'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610097'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610033'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697609988'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610252'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610207'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610274'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event fee | {'tx_id': 'A8356ECC701C09BF7EA7F4A95B86F55BA1A90E79F866D1AD1372A13BF1661F9F'} {'coins': '1857000 BTC.BTC'} {'pool_deduct': '1270125398'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610011'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610141'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'BTC.BTC'} {'asset_amt': '928500'} {'rune_amt': '628665760'} {'transaction_count': '1'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610185'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610230'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697609966'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event rewards | {'bond_reward': '697610296'}
+make: *** [smoke] Error 1
+```
+
+Putting it to 0.3 like the others
+
+
+```
+I[2022-07-30 01:20:24,537] 96 PROVIDER-1 => VAULT      [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE
+I[2022-07-30 01:20:25,075] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:DASH.DASH:100] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID E21285A360447B8EF7F5E82E96B5647881609320A107B82EE082247F8F84C2C6
+I[2022-07-30 01:20:25,076] @###  get_rune_fee
+I[2022-07-30 01:20:25,076] @###    chain DASH
+I[2022-07-30 01:20:25,077] @###    chain_fee 102448
+I[2022-07-30 01:20:25,077] @###    gas_asset DASH.DASH
+I[2022-07-30 01:20:25,078] @###    chain_fee * 3?! 307344
+I[2022-07-30 01:20:25,078] @###    rune_fee 86152
+I[2022-07-30 01:20:25,079] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-30 01:20:25,079] @### rune_amt $37811878
+I[2022-07-30 01:20:25,079] @### asset_amt $134892790
+I[2022-07-30 01:20:25,080] @### emit_asset $134892790
+I[2022-07-30 01:20:25,080] @### outbound_asset_amt $134892790
+I[2022-07-30 01:20:25,080] @###  get_rune_fee
+I[2022-07-30 01:20:25,081] @###    chain DASH
+I[2022-07-30 01:20:25,081] @###    chain_fee 102448
+I[2022-07-30 01:20:25,081] @###    gas_asset DASH.DASH
+I[2022-07-30 01:20:25,081] @###    chain_fee * 3?! 307344
+I[2022-07-30 01:20:25,082] @###    rune_fee 86152
+I[2022-07-30 01:20:25,082] @### tx.max_gas [<Coin 0.00153672 DASH.DASH>]
+I[2022-07-30 01:20:25,083] @### asset_fee 307344
+I[2022-07-30 01:20:25,083] @### self.dash_estimate_size 304
+I[2022-07-30 01:20:25,084] @### self.dash_tx_rate 337
+I[2022-07-30 01:20:25,084] @###  get_rune_fee
+I[2022-07-30 01:20:25,084] @###    chain THOR
+I[2022-07-30 01:20:25,085] @###    not in network fees
+I[2022-07-30 01:20:35,023] @### SETTING DASH TX_RATE 339
+I[2022-07-30 01:20:35,340] @### SETTING DASH TX_RATE 339
+I[2022-07-30 01:20:35,656] @### SETTING DASH TX_RATE 339
+I[2022-07-30 01:20:35,979] @### SETTING DASH TX_RATE 339
+E[2022-07-30 01:20:40,211] out coins not matching 134585598 DASH.DASH != 134585446 DASH.DASH
+E[2022-07-30 01:21:42,833] Events mismatch
+
+E[2022-07-30 01:21:42,834] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 572, in sim_catch_up
+    self.check_events(events[-count_events:], sim_events[-count_events:])
+  File "/app/scripts/smoke.py", line 382, in check_events
+    self.error("Events mismatch\n")
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: Events mismatch
+
+>>>>>>>>>>>>>>> MISSING SIM EVENT
+Event outbound | {'in_tx_id': 'E21285A360447B8EF7F5E82E96B5647881609320A107B82EE082247F8F84C2C6'} {'id': '82CB734238A07EB7C7EFE85D1F53329417306DE2356266F973970971F214BBD2'} {'chain': 'DASH'} {'from': 'ycGHgcCGykVLrhoR89YTTFkvZh3ghkFYXi'} {'to': 'yXdzzagQPwWXdZzFD2vRmsYMxgeD6o9D2L'} {'coin': '134585446 DASH.DASH'} {'memo': 'OUT:E21285A360447B8EF7F5E82E96B5647881609320A107B82EE082247F8F84C2C6'}
+<<<<<<<<<<<<<<< EXTRA SIM EVENT
+Event gas | {'asset': 'GAIA.ATOM'} {'asset_amt': '3015000'} {'rune_amt': '96754'} {'transaction_count': '1'}
+make: *** [smoke] Error 1
+```
+
+`dash-only`: 0 changes
+```
+I[2022-07-30 02:00:06,888] 114 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE
+I[2022-07-30 02:00:11,729] @### sim_trigger_tx tthor1wz78qmrkplrdhy37tw0tnvn0tkm5pqd6zdp257 => tthor1g98cy3n9mmjrpn0sxmn63lztelera37nrytwp2 [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE | Gas 0.02000000 THOR.RUNE | ID 6ADEE92FEBC2759EE757C8FAD296FD3FA559CE86EFE36CDD83CA538672066A8D
+I[2022-07-30 02:00:11,730] @###  get_rune_fee
+I[2022-07-30 02:00:11,731] @###    chain BTC
+I[2022-07-30 02:00:11,731] @###    chain_fee 632000
+I[2022-07-30 02:00:11,731] @###    gas_asset BTC.BTC
+I[2022-07-30 02:00:11,732] @###    chain_fee * 3?! 1896000
+I[2022-07-30 02:00:11,732] @###    rune_fee 1152174939
+I[2022-07-30 02:00:11,733] @### HANDLE WITHDRAW ESTIMATE
+I[2022-07-30 02:00:11,733] @### rune_amt $111335025965
+I[2022-07-30 02:00:11,733] @### asset_amt $183211075
+I[2022-07-30 02:00:11,733] @### emit_asset $183211075
+I[2022-07-30 02:00:11,733] @### outbound_asset_amt $183211075
+I[2022-07-30 02:00:11,734] @###  get_rune_fee
+I[2022-07-30 02:00:11,734] @###    chain BTC
+I[2022-07-30 02:00:11,734] @###    chain_fee 632000
+I[2022-07-30 02:00:11,734] @###    gas_asset BTC.BTC
+I[2022-07-30 02:00:11,734] @###    no fee for 0 asset + rune balance
+I[2022-07-30 02:00:11,735] @###  get_rune_fee
+I[2022-07-30 02:00:11,735] @###    chain THOR
+I[2022-07-30 02:00:11,735] @###    not in network fees
+E[2022-07-30 02:01:34,121] failed to send all outbound transactions 2
+E[2022-07-30 02:01:34,121] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 646, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 574, in sim_catch_up
+    self.error(msg)
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+make: *** [smoke] Error 1
+```
+
+
+`develop`: 0 changes OK  
+`982-add-dash-chain` with `git checkout develop:./data/*txs.json` and `export make test`  OK  
+
+`982-add-dash-chain` with dash transactions:
+```
+I[2022-07-30 03:52:29,706] 114 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE
+E[2022-07-30 03:53:55,929] failed to send all outbound transactions 2
+E[2022-07-30 03:53:55,930] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 143, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 645, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 573, in sim_catch_up
+    self.error(msg)
+  File "/app/scripts/smoke.py", line 249, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 2
+make: *** [smoke] Error 1
+```
+
+934f08e: 0 changes OK
+
+
+### 08.08.2022 Monday
+
+Back from covid round 2. Omicron was far worse.
+
+So in the time I've been trying to get heimdall tests passing, the TC devs have
+actually merged it into the main thornode repo. Good news. Is there anything new
+in develop for the bifrost clients to worry about?
+
+- bifrost config
+- `lte` becomes `lt` in `extractTxs`
+
+Right.
+
+So now I can run the smoke tests from within thornode?
+
+```bash
+# export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+make smoke-protob-docker
+make smoke; makenoise
+
+EXPORT=data/smoke_test_balances.json EXPORT_EVENTS=data/smoke_test_events.json make smoke-unit-test
+```
+
+Here we go again:
+
+```
+make smoke                                    ~/go/src/gitlab.com/thorchain/thornode
+[+] Running 16/16
+ ⠿ Container docker-midgard-1       Removed                                                                                                                                                                                                   0.0s
+ ⠿ Container docker-gaia-1          Removed                                                                                                                                                                                                   0.3s
+ ⠿ Container docker-bifrost-1       Removed                                                                                                                                                                                                  10.2s
+ ⠿ Container docker-avalanche-1     Removed                                                                                                                                                                                                   0.2s
+ ⠿ Container docker-midgard-db-1    Removed                                                                                                                                                                                                   0.2s
+ ⠿ Container docker-thornode-1      Removed                                                                                                                                                                                                   0.3s
+ ⠿ Container docker-litecoin-1      Removed                                                                                                                                                                                                  10.3s
+ ⠿ Container docker-bitcoin-cash-1  Removed                                                                                                                                                                                                  10.3s
+ ⠿ Container docker-dash-1          Removed                                                                                                                                                                                                  10.2s
+ ⠿ Container docker-ethereum-1      Removed                                                                                                                                                                                                  10.3s
+ ⠿ Container docker-bitcoin-1       Removed                                                                                                                                                                                                  10.3s
+ ⠿ Container docker-binance-1       Removed                                                                                                                                                                                                   0.1s
+ ⠿ Container docker-dogecoin-1      Removed                                                                                                                                                                                                  10.2s
+ ⠿ Network docker_default           Removed                                                                                                                                                                                                   0.1s
+ ⠿ Volume docker_bifrost            Removed                                                                                                                                                                                                   0.0s
+ ⠿ Volume docker_thornode           Removed                                                                                                                                                                                                   0.0s
+[+] Running 16/16
+ ⠿ Network docker_default           Created                                                                                                                                                                                                   0.0s
+ ⠿ Volume "docker_bifrost"          Created                                                                                                                                                                                                   0.0s
+ ⠿ Volume "docker_thornode"         Created                                                                                                                                                                                                   0.0s
+ ⠿ Container docker-dogecoin-1      Started                                                                                                                                                                                                   0.9s
+ ⠿ Container docker-bitcoin-cash-1  Started                                                                                                                                                                                                   1.1s
+ ⠿ Container docker-dash-1          Started                                                                                                                                                                                                   0.6s
+ ⠿ Container docker-ethereum-1      Started                                                                                                                                                                                                   0.8s
+ ⠿ Container docker-litecoin-1      Started                                                                                                                                                                                                   0.6s
+ ⠿ Container docker-avalanche-1     Started                                                                                                                                                                                                   0.9s
+ ⠿ Container docker-binance-1       Started                                                                                                                                                                                                   0.7s
+ ⠿ Container docker-gaia-1          Started                                                                                                                                                                                                   1.2s
+ ⠿ Container docker-midgard-db-1    Started                                                                                                                                                                                                   0.6s
+ ⠿ Container docker-bitcoin-1       Started                                                                                                                                                                                                   1.1s
+ ⠿ Container docker-thornode-1      Started                                                                                                                                                                                                   1.2s
+ ⠿ Container docker-bifrost-1       Started                                                                                                                                                                                                   1.4s
+ ⠿ Container docker-midgard-1       Started                                                                                                                                                                                                   1.5s
+smoke: Pulling from thorchain/thornode
+Digest: sha256:78e0671aaaace966cf5cc333b7380dfc0579deac9898b61daa55c0f4dabc85c3
+Status: Downloaded newer image for registry.gitlab.com/thorchain/thornode:smoke
+registry.gitlab.com/thorchain/thornode:smoke
+[+] Building 116.7s (16/16) FINISHED
+ => [internal] load build definition from Dockerfile                                                                                                                                                                                          0.0s
+ => => transferring dockerfile: 466B                                                                                                                                                                                                          0.0s
+ => [internal] load .dockerignore                                                                                                                                                                                                             0.0s
+ => => transferring context: 2B                                                                                                                                                                                                               0.0s
+ => [internal] load metadata for docker.io/library/python:3.10-slim                                                                                                                                                                           1.1s
+ => [auth] library/python:pull token for registry-1.docker.io                                                                                                                                                                                 0.0s
+ => importing cache manifest from registry.gitlab.com/thorchain/thornode:smoke                                                                                                                                                                0.0s
+ => [1/9] FROM docker.io/library/python:3.10-slim@sha256:2124d4f8ccbd537500de16660a876263949ed9a9627cfb6141f418d36f008e9e                                                                                                                     0.0s
+ => [internal] load build context                                                                                                                                                                                                             0.0s
+ => => transferring context: 315.17kB                                                                                                                                                                                                         0.0s
+ => CACHED [2/9] WORKDIR /app                                                                                                                                                                                                                 0.0s
+ => CACHED [3/9] RUN apt-get update && apt-get install -y libsecp256k1-0 build-essential git                                                                                                                                                  0.0s
+ => [4/9] COPY requirements.txt .                                                                                                                                                                                                             0.0s
+ => [5/9] RUN pip install python-bitcointx                                                                                                                                                                                                   14.0s
+ => [6/9] RUN pip install git+https://gitlab.com/thorchain/bifrost/python-dogecointx.git#egg=python-dogecointx                                                                                                                               10.0s
+ => [7/9] RUN pip install git+https://gitlab.com/alexdcox/python-dashtx.git#egg=python-dashtx                                                                                                                                                 8.1s
+ => [8/9] RUN pip install -r requirements.txt                                                                                                                                                                                                82.7s
+ => [9/9] COPY . .                                                                                                                                                                                                                            0.0s
+ => exporting to image                                                                                                                                                                                                                        0.4s
+ => => exporting layers                                                                                                                                                                                                                       0.4s
+ => => writing image sha256:5ea648741799fabdce283c31147041790a35bc5477c67e7880916a089316ee65                                                                                                                                                  0.0s
+ => => naming to registry.gitlab.com/thorchain/thornode:smoke                                                                                                                                                                                 0.0s
+
+Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
+W[2022-08-08 22:15:59,721] Retrying (Retry(total=5, connect=5, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da0670>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:16:01,725] Retrying (Retry(total=4, connect=4, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3f40>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:16:05,727] Retrying (Retry(total=3, connect=3, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3d30>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:16:13,738] Retrying (Retry(total=2, connect=2, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3b80>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:16:29,741] Retrying (Retry(total=1, connect=1, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da39d0>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:17:01,764] Retrying (Retry(total=0, connect=0, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3820>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:17:02,775] Retrying (Retry(total=5, connect=5, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da2f20>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:17:04,783] Retrying (Retry(total=4, connect=4, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3ee0>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:17:08,790] Retrying (Retry(total=3, connect=3, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da0850>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:17:16,800] Retrying (Retry(total=2, connect=2, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da2530>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:17:32,818] Retrying (Retry(total=1, connect=1, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da0730>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+W[2022-08-08 22:18:04,840] Retrying (Retry(total=0, connect=0, read=6, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3ac0>: Failed to establish a new connection: [Errno 111] Connection refused')': /thorchain/lastblock
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connection.py", line 156, in _new_conn
+    conn = connection.create_connection(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/util/connection.py", line 84, in create_connection
+    raise err
+  File "/usr/local/lib/python3.10/site-packages/urllib3/util/connection.py", line 74, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connectionpool.py", line 665, in urlopen
+    httplib_response = self._make_request(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connectionpool.py", line 387, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/local/lib/python3.10/http/client.py", line 1282, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/local/lib/python3.10/http/client.py", line 1328, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/local/lib/python3.10/http/client.py", line 1277, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/local/lib/python3.10/http/client.py", line 1037, in _send_output
+    self.send(msg)
+  File "/usr/local/lib/python3.10/http/client.py", line 975, in send
+    self.connect()
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connection.py", line 184, in connect
+    conn = self._new_conn()
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connection.py", line 168, in _new_conn
+    raise NewConnectionError(
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x4007da3700>: Failed to establish a new connection: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/requests/adapters.py", line 439, in send
+    resp = conn.urlopen(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connectionpool.py", line 747, in urlopen
+    return self.urlopen(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connectionpool.py", line 747, in urlopen
+    return self.urlopen(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connectionpool.py", line 747, in urlopen
+    return self.urlopen(
+  [Previous line repeated 3 more times]
+  File "/usr/local/lib/python3.10/site-packages/urllib3/connectionpool.py", line 719, in urlopen
+    retries = retries.increment(
+  File "/usr/local/lib/python3.10/site-packages/urllib3/util/retry.py", line 436, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=1317): Max retries exceeded with url: /thorchain/lastblock (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3700>: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 394, in call
+    result = fn(*args, **kwargs)
+  File "/app/thorchain/thorchain.py", line 78, in wait_for_node
+    current_height = self.get_block_height()
+  File "/app/thorchain/thorchain.py", line 150, in get_block_height
+    data = self.fetch("/thorchain/lastblock")
+  File "/app/utils/common.py", line 84, in fetch
+    resp = requests_retry_session().get(url, params=args)
+  File "/usr/local/lib/python3.10/site-packages/requests/sessions.py", line 546, in get
+    return self.request('GET', url, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/requests/sessions.py", line 533, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/requests/sessions.py", line 646, in send
+    r = adapter.send(request, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/requests/adapters.py", line 516, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=1317): Max retries exceeded with url: /thorchain/lastblock (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x4007da3700>: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 662, in <module>
+    main()
+  File "/app/scripts/smoke.py", line 119, in main
+    health = Health(
+  File "/app/scripts/health.py", line 74, in __init__
+    self.thorchain_client = ThorchainClient(thor)
+  File "/app/thorchain/thorchain.py", line 48, in __init__
+    self.wait_for_node()
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 311, in wrapped_f
+    return self.call(f, *args, **kw)
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 391, in call
+    do = self.iter(retry_state=retry_state)
+  File "/usr/local/lib/python3.10/site-packages/tenacity/__init__.py", line 351, in iter
+    six.raise_from(retry_exc, fut.exception())
+  File "<string>", line 3, in raise_from
+tenacity.RetryError: RetryError[<Future at 0x4007da3130 state=finished raised ConnectionError>]
+make: *** [smoke] Error 1
+```
+
+`gco develop`
+
+The `thornode` docker container on `develop` is not listening on `1317`.  
+Why?
+
+Here are some notable errors:
+- `python3: can't open file 'scripts/avax/avax-tool.py': [Errno 2] No such file or directory`
+- `/docker/scripts/genesis.sh: line 77: block_time: not found`
+- `Error: error validating genesis file /root/.thornode/config/genesis.json: chain contract cannot be empty`
+- `Error: unknown command "render-config" for "THORChain"`
+
+I think Asmund just pushed a fix for that...
+
+```
+make run-mocknet
+docker exec docker-thornode-1 netstat -npl
+```
+
+```
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:6060          0.0.0.0:*               LISTEN      1/qemu-x86_64
+tcp        0      0 127.0.0.11:45105        0.0.0.0:*               LISTEN      -
+tcp        0      0 :::9090                 :::*                    LISTEN      1/qemu-x86_64
+tcp        0      0 :::9091                 :::*                    LISTEN      1/qemu-x86_64
+tcp        0      0 :::26656                :::*                    LISTEN      1/qemu-x86_64
+tcp        0      0 :::26657                :::*                    LISTEN      1/qemu-x86_64
+udp        0      0 127.0.0.11:55376        0.0.0.0:*                           -
+Active UNIX domain sockets (only servers)
+Proto RefCnt Flags       Type       State         I-Node PID/Program name    Path
+```
+
+
+Prereq?
+```bash
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+```
+
+Build smoker:
+```bash
+docker build \
+  --platform linux/amd64 \
+  -t registry.gitlab.com/thorchain/thornode:smoke \
+  test/smoke && \
+makenoise
+```
+
+Build thornode:
+```bash
+cd build/docker && \
+docker build \
+  --progress plain \
+  --build-arg TAG=mocknet \
+  -t registry.gitlab.com/thorchain/thornode:$(git branch --show-current)-$(git rev-parse --short HEAD) \
+  -f Dockerfile \
+  ../.. && \
+docker tag registry.gitlab.com/thorchain/thornode:$(git branch --show-current)-$(git rev-parse --short HEAD) registry.gitlab.com/thorchain/thornode:mocknet && \
+cd - && \
+makenoise
+```
+
+Alert when mocknet ready:
+```bash
+timeout 300 bash -c 'while [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' http://localhost:6040/p2pid)" != "200" ]]; do sleep 5; done' && afplay /System/Library/Sounds/Funk.aiff
+```
+
+Run smoke tests:
+```bash
+docker run \
+  -it \
+  --rm \
+  --name heimdall \
+  --network host \
+  --pull never \
+  --platform linux/amd64 \
+  -v $(pwd)/test/smoke:/app \
+  -e RUNE=THOR.RUNE \
+  -e LOGLEVEL=INFO \
+  -e PYTHONPATH=/app \
+  -w /app \
+  registry.gitlab.com/thorchain/thornode:smoke \
+    python scripts/smoke.py --fast-fail=True && \
+makenoise
+```
+
+```
+I[2022-08-09 00:34:33,230] 107 PROVIDER-1 => VAULT      [WITHDRAW:BTC.BTC] 0.00000001 THOR.RUNE
+E[2022-08-09 00:35:57,817] failed to send all outbound transactions 1
+E[2022-08-09 00:35:57,818] Smoke tests failed
+Traceback (most recent call last):
+  File "/app/scripts/smoke.py", line 136, in main
+    smoker.run()
+  File "/app/scripts/smoke.py", line 612, in run
+    outbounds, block_height, events, sim_events = self.sim_catch_up(txn)
+  File "/app/scripts/smoke.py", line 540, in sim_catch_up
+    self.error(msg)
+  File "/app/scripts/smoke.py", line 235, in error
+    raise Exception(err)
+Exception: failed to send all outbound transactions 1
+```
+
+Experimenting with m1 builds:
+
+Oh `ci/images` has gone. We're back to `node-launcher` repo...
+
+
+Rebuild all images:
+```bash
+export DOCKER_DEFAULT_PLATFORM=linux/arm64
+```
+
+Damn power out.
+
+Trying all the rest on my other machine (non m1)
+```
+sudo apt install -y protobuf-compiler
+./scripts/protocgen.sh
+make protob-docker
+make openapi
+make build-mocknet
+make run-mocknet
+timeout 300 bash -c 'while [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' http://localhost:6040/p2pid)" != "200" ]]; do sleep 5; done'; echo -e "################################################################################\n                                      DONE                                      \n################################################################################\n"
+make smoke-protob
+make smoke
+```
+
+dev worked. Now mine?
+
+```
+make smoke-unit-test
+```
+
+no changes. do we have to rebuild `smoke` first?
+
+```
+make smoke-build-image
+```
+
+```
+make smoke-unit-test
+/usr/local/lib/python3.10/site-packages/eth_utils/toolz.py:2: DeprecationWarning: The toolz.compatibility module is no longer needed in Python 3 and has been deprecated. Please import these utilities directly from the standard library. This module will be removed in a future release.
+  from cytoolz import (
+/usr/local/lib/python3.10/site-packages/web3/_utils/normalizers.py:231: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+  if LooseVersion(eth_abi.__version__) < LooseVersion("2"):
+...........................I[2022-08-09 03:36:53,729] 0     MASTER => CONTRIB    [SEED] 10.00000000 BNB.BNB
+I[2022-08-09 03:36:53,729] 1     MASTER => USER-1     [SEED] 26.00000000 BNB.BNB, 1,500.00000000 BNB.LOK-3C0
+I[2022-08-09 03:36:53,729] 2     MASTER => PROVIDER-1 [SEED] 10.00000000 BNB.BNB, 800.00000000 BNB.LOK-3C0
+I[2022-08-09 03:36:53,729] 3     MASTER => PROVIDER-2 [SEED] 2.00000000 BNB.BNB, 100.00000000 BNB.LOK-3C0
+I[2022-08-09 03:36:53,729] 4     MASTER => USER-1     [SEED] 2.00000000 BTC.BTC
+I[2022-08-09 03:36:53,729] 5     MASTER => PROVIDER-1 [SEED] 5.00000000 BTC.BTC
+I[2022-08-09 03:36:53,729] 6     MASTER => USER-1     [SEED] 200.00000000 DOGE.DOGE
+I[2022-08-09 03:36:53,729] 7     MASTER => PROVIDER-1 [SEED] 2,000.00000000 DOGE.DOGE
+I[2022-08-09 03:36:53,729] 8     MASTER => USER-1     [SEED] 500,000.00000000 GAIA.ATOM
+I[2022-08-09 03:36:53,729] 9     MASTER => PROVIDER-1 [SEED] 500,000.00000000 GAIA.ATOM
+I[2022-08-09 03:36:53,729] 10     MASTER => USER-1     [SEED] 20.00000000 DASH.DASH
+I[2022-08-09 03:36:53,729] 11     MASTER => PROVIDER-1 [SEED] 200.00000000 DASH.DASH
+I[2022-08-09 03:36:53,730] 12     MASTER => PROVIDER-2 [SEED] 5.00000000 BTC.BTC
+I[2022-08-09 03:36:53,730] 13     MASTER => USER-1     [SEED] 2.00000000 BCH.BCH
+I[2022-08-09 03:36:53,730] 14     MASTER => PROVIDER-1 [SEED] 2.00000000 BCH.BCH
+I[2022-08-09 03:36:53,730] 15     MASTER => PROVIDER-2 [SEED] 2.00000000 BCH.BCH
+I[2022-08-09 03:36:53,730] 16     MASTER => USER-1     [SEED] 2.00000000 LTC.LTC
+I[2022-08-09 03:36:53,730] 17     MASTER => PROVIDER-1 [SEED] 2.00000000 LTC.LTC
+I[2022-08-09 03:36:53,730] 18     MASTER => PROVIDER-2 [SEED] 2.00000000 LTC.LTC
+I[2022-08-09 03:36:53,730] 19     MASTER => USER-1     [SEED] 400,000,000,000.00000000 ETH.ETH
+I[2022-08-09 03:36:53,730] 20     MASTER => PROVIDER-1 [SEED] 400,000,000,000.00000000 ETH.ETH
+I[2022-08-09 03:36:53,730] 21     MASTER => USER-1     [SEED] 4,000,000,000,000.00000000 ETH.TKN-0X40BCD4DB8889A8BF0B1391D0C819DCD9627F9D0A
+I[2022-08-09 03:36:53,730] 22     MASTER => PROVIDER-1 [SEED] 4,000,000,000,000.00000000 ETH.TKN-0X40BCD4DB8889A8BF0B1391D0C819DCD9627F9D0A
+I[2022-08-09 03:36:53,730] 23 PROVIDER-1 => VAULT      [SWAP:BNB.BNB:PROVIDER-1-SYNTH] 500.00000000 THOR.RUNE
+I[2022-08-09 03:36:53,731] Transaction: 23      VAULT => PROVIDER-1 [REFUND:TODO] 499.98000000 THOR.RUNE | Gas 0.02000000 THOR.RUNE | Fee 0.02000000 THOR.RUNE
+I[2022-08-09 03:36:53,731] >>>>>> Expected
+I[2022-08-09 03:36:53,731] {'CONTRIB': {'BNB.BNB': 1000000000},
+ 'OUT': 0,
+ 'POOL.BNB.BNB': {'BNB.BNB': 250000000, 'THOR.RUNE': 100000000000},
+ 'PROVIDER-1': {'BNB.BNB': 749962500, 'BNB.LOK-3C0': 80000000000},
+ 'PROVIDER-2': {'BNB.BNB': 200000000, 'BNB.LOK-3C0': 10000000000},
+ 'TX': 23,
+ 'USER-1': {'BNB.BNB': 2600000000, 'BNB.LOK-3C0': 150000000000},
+ 'VAULT': {'BNB.BNB': 250000000}}
+I[2022-08-09 03:36:53,732] >>>>>> Obtained
+I[2022-08-09 03:36:53,732] {'CONTRIB': {'BNB.BNB': 1000000000},
+ 'OUT': 1,
+ 'PROVIDER-1': {'BNB.BNB': 1000000000, 'BNB.LOK-3C0': 80000000000},
+ 'PROVIDER-2': {'BNB.BNB': 200000000, 'BNB.LOK-3C0': 10000000000},
+ 'TX': 23,
+ 'USER-1': {'BNB.BNB': 2600000000, 'BNB.LOK-3C0': 150000000000},
+ 'VAULT': {}}
+I[2022-08-09 03:36:53,732] >>>>>> DIFF
+I[2022-08-09 03:36:53,732] {'dictionary_item_added': [root['POOL.BNB.BNB'], root['VAULT']['BNB.BNB']],
+ 'values_changed': {"root['OUT']": {'new_value': 0, 'old_value': 1},
+                    "root['PROVIDER-1']['BNB.BNB']": {'new_value': 749962500,
+                                                      'old_value': 1000000000}}}
+E.........................
+======================================================================
+ERROR: test_smoke (tests.test_smoke.TestSmoke)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/app/tests/test_smoke.py", line 210, in test_smoke
+    raise Exception("did not match!")
+Exception: did not match!
+
+----------------------------------------------------------------------
+Ran 53 tests in 0.022s
+
+FAILED (errors=1)
+make: *** [smoke-unit-test] Error 1
+```
+
+```
+docker build \
+  --platform linux/amd64 \
+  -t registry.gitlab.com/thorchain/thornode:smoke \
+  test/smoke
+```
+
+```
+EXPORT=data/smoke_test_balances.json EXPORT_EVENTS=data/smoke_test_events.json make smoke-unit-test
+```
+
+The above is what's written in the readme. But that doesn't actually export
+because the volume is not mounted so the newly written files die with the
+container. We need:
+
+```
+-v ${PWD}/test/smoke:/app \
+```
+
+Back to the other machine.
+
+```
+make smoke-build-image
+make smoke-unit-test
+make smoke
+```
+
+Damn.
+
+Dash wasn't part of a new default bifrost config file they've added.
+
+```
+timeout 300 bash -c 'while [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' http://localhost:6040/p2pid)" != "200" ]]; do sleep 5; done'; curl localhost:1317/thorchain/inbound_addresses
+```
+
+`go mod tidy -compat=1.17`
+
+Clean run. Wow.
+
+### 09.08.2022 Tuesday
+
+Asked Leena to merge, over to Decred...
+
+- [ ] Try the smoke tests with `thornode add-genesis-account "$user" 100000000rune` (one less 0)
+- [ ] Dash vs other chains comment
+- [ ] Tidy up `node-status.sh`
+- [ ] Delete pubkey2address binary?
+
+Dash is based on Bitcoin and is compatible with many key components of the
+Bitcoin ecosystem. The difference with Dash is the second layer of network
+participants, called masternodes, which form long-lived quorums (LLMQs) which
+faciliate instant transaction confirmation, double spend protection and are the
+basis on which the decentralised autonomous organisation (DAO) self-governs.
+
+
+### 10.08.2022 Wednesday
+
+Eridanus asked for me to bring the python library for dash into the project.
+
+```
+cd test/smoke
+git clone --depth=1 --branch=master https://gitlab.com/alexdcox/python-dashtx.git
+rm -rf .git
+```
+
+This works to install from file:
+```
+RUN pip install -e /app/python-dashtx
+```
+
+### 23.08.2022 Tuesday
+
+TC community are in discussions about what coins to integrate next.
+
+My work is pretty much done for now. They've asked me to tackle xchainjs,
+and there's also Dash/TC wallet integration in the pipeline headed up by Brain.
+
+I'll start with xchainjs.
+
+Opened new issue: https://github.com/xchainjs/xchainjs-lib/issues/629  
+New branch: `629-add-xchain-dash`  
+
+
+Looking up the typical hd derivation paths for dash...
+
+Atomic  
+https://support.atomicwallet.io/article/146-list-of-derivation-paths  
+
+Dash (DASH)  
+m/44'/5'/0'  
+
+Doge (DOGE)  
+m/44'/3'/0'/0/0  
+
+
+Exodus  
+https://support.exodus.com/article/1795-derivation-paths-in-exodus  
+
+Dash (DASH) m/44'/5'/0'/0/0  
+
+`44 5` it is.
+
+
+Can insight return utxos for an address?  
+Yes it can.  
+
+PSBT = Partially Signed Bitcoin Transaction
+
+### 24.08.2022 Wednesday
+
+- [ ] Add thornode dash inbound address for mainnet/testnet
+
+- [ ] Add getBalance mock response
+  It wants `yUhRyiu6gTAQyRqwsd2cQ9SUo2m5cbyfHD`  
+  I'll use `XhaMkMQ6SLau1onw124zqy4SR2UokEv5hw` from mainnet and modify  
+
+https://testnet-insight.dash.org/insight-api/txs?address=yLhzaEXappHzG1C7fkEhEWQTzMQhjn18Rb&pageNum=0
+
+Okay, back to.
+
+This is my current headache:
+
+```
+yarn build
+yarn run v1.22.19
+$ lerna run build
+lerna notice cli v3.22.1
+lerna info versioning independent
+lerna info Executing command in 17 packages: "yarn run build"
+lerna ERR! yarn run build exited 1 in '@xchainjs/xchain-crypto'
+lerna ERR! yarn run build stdout:
+$ yarn clean && rollup -c
+$ rimraf lib/**
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+
+lerna ERR! yarn run build stderr:
+Error loading `tslib` helper library.
+[!] Error: Package subpath './package.json' is not defined by "exports" in /Users/adc/go/src/github.com/xchainjs-lib/node_modules/tslib/package.json
+Error: Package subpath './package.json' is not defined by "exports" in /Users/adc/go/src/github.com/xchainjs-lib/node_modules/tslib/package.json
+    at new NodeError (node:internal/errors:388:5)
+    at throwExportsNotFound (node:internal/modules/esm/resolve:440:9)
+    at packageExportsResolve (node:internal/modules/esm/resolve:719:3)
+    at resolveExports (node:internal/modules/cjs/loader:488:36)
+    at Function.Module._findPath (node:internal/modules/cjs/loader:528:31)
+    at Function.Module._resolveFilename (node:internal/modules/cjs/loader:932:27)
+    at Function.Module._load (node:internal/modules/cjs/loader:787:27)
+    at Module.require (node:internal/modules/cjs/loader:1012:19)
+    at require (node:internal/modules/cjs/helpers:102:18)
+    at Object.<anonymous> (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/src/tslib.ts:11:23)
+
+error Command failed with exit code 1.
+
+lerna ERR! yarn run build exited 1 in '@xchainjs/xchain-crypto'
+lerna WARN complete Waiting for 3 child processes to exit. CTRL-C to exit immediately.
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+```
+
+I have 3 ways to change my node version and it's a bit mental:
+
+```
+brew install node@16
+n install v16
+nvm install 16
+```
+
+```
+node@16 is keg-only, which means it was not symlinked into /opt/homebrew,
+because this is an alternate version of another formula.
+
+If you need to have node@16 first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/node@16/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find node@16 you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/node@16/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/node@16/include"
+```
+
+```
+export PATH="/opt/homebrew/opt/node@16/bin:$PATH"
+```
+
+Okay that built. So I have to use node 2 versions behind the current.
+
+Took the following from `https://bitinfocharts.com/dash/`:
+```js
+DASH: {
+  blockReward: 2.49,
+  avgBlockTimeInSecs: 156,
+},
+```
+
+Back to getting the tests passing...
+
+
+I've hit a roadblock. I need to build a transaction from scratch in JS.  
+Perhaps dashevo has already solved this?  
+`yarn add @dashevo/dashcore-lib`  
+
+Looks like it's using the old style of typescript and `typings`.  
+Absolutely no idea how to use that.  
+
+03000000015cc584400cff9c36a2e4613fa5e020ef81ac51abf3ff09b86d70780c2bbd12390000000000ffffffff0217000000000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac54ee3419000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000
+03000000015cc584400cff9c36a2e4613fa5e020ef81ac51abf3ff09b86d70780c2bbd12390000000000ffffffff0217000000000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac54ee3419000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000
+
+What a taxing day.
+
+### 25.08.2022 Thursday
+
+Been caught up with other things mostly.
+
+https://github.com/dashevo/dashcore-lib
+
+```
+Cannot find module '@dashevo/dashcore-lib/typings/transaction/input/Input' from 'src/utils.ts'
+
+    Require stack:
+      src/utils.ts
+      src/dashcore.ts
+      __tests__/dashcore.test.ts
+
+      20 | import {InsightRawTx, InsightTransactionParams} from './insight-api'
+      21 | import {Transaction} from "@dashevo/dashcore-lib/typings/transaction/Transaction";
+    > 22 | import {Input} from "@dashevo/dashcore-lib/typings/transaction/input/Input";
+         | ^
+      23 | import {Output} from "@dashevo/dashcore-lib/typings/transaction/Output";
+      24 | import {Script} from "@dashevo/dashcore-lib/typings/script/Script";
+      25 | import { Address as DashAddress } from '@dashevo/dashcore-lib/typings/Address'
+```
+
+Odd.
+
+```
+///<reference path="../../../node_modules/@dashevo/dashcore-lib/typings/transaction/Transaction.d.ts" />
+///<reference types="@dashevo/dashcore-lib/typings" />
+```
+
+Christ on a cracker I got there. It took me over an hour of googling how to
+include a normal js module with typescript definitions in a separate directory,
+along with the specifics of dashcore-lib. Here is a thing of beauty:
+
+```js
+declare module '@dashevo/dashcore-lib'
+```
+
+```js
+import * as dashcore from "@dashevo/dashcore-lib"
+import {Transaction} from "@dashevo/dashcore-lib/typings/transaction/Transaction";
+import {Input} from "@dashevo/dashcore-lib/typings/transaction/input/Input";
+import {Output} from "@dashevo/dashcore-lib/typings/transaction/Output";
+
+describe('Dash Core Test', () => {
+  it('should doSomething', async () => {
+    const transaction: Transaction = new dashcore.Transaction({})
+    console.log(transaction)
+
+    const input: Input = new dashcore.Transaction.Input({
+      script: "",
+    })
+    console.log(input)
+
+    const output: Output = new dashcore.Transaction.Output({
+      satoshis: 123,
+      script: "",
+    })
+    console.log(output)
+  })
+})
+```
+
+I'm using the typical js constructors but with the benefit of typescript
+definitions. It compiles, it runs, happy days.
+
+### 26.08.2022 Friday
+
+Damn. It was actually the `Script` import that broke the others. You can't tell
+from the log.
+
+So this is quite roundabount, but the error is completely misleading and is
+triggered when trying to instantiate the type rather than the underlying
+implementation. i.e.
+
+```js
+import {Script} from "@dashevo/dashcore-lib/typings/script/Script";
+
+const script = Script.buildDataOut('hello world!!!');
+console.log(script.toString())
+```
+
+This causes a typescript error because the type definition for buildDataOut
+has a second argument, even though the underlying implementation doesn't.
+
+```
+../../node_modules/@dashevo/dashcore-lib/typings/script/Script.d.ts:201:46
+  201   static buildDataOut(data: string | Buffer, encoding: string): Script;
+                                                   ~~~~~~~~~~~~~~~~
+  An argument for 'encoding' was not provided.
+```
+
+If we follow the typescript definition (potentially passing a redundant
+variable):
+
+```js
+import {Script} from "@dashevo/dashcore-lib/typings/script/Script";
+
+const script = Script.buildDataOut('hello world!!!', 'utf8');
+console.log(script.toString())
+```
+
+We get the error:
+
+```
+Cannot find module '@dashevo/dashcore-lib/typings/script/Script' from '__tests__/dashcore.test.ts'
+
+  4 | import {Output} from "@dashevo/dashcore-lib/typings/transaction/Output";
+> 5 | import {Script} from "@dashevo/dashcore-lib/typings/script/Script";
+    | ^
+```
+
+Which is absolute bollocks because that class is exported and it can find it if
+we change the `script` instantiation to use the plain js lib and follow the
+documented example for `buildDataOut`:
+
+```js
+import * as dashcore from "@dashevo/dashcore-lib"
+import {Script} from "@dashevo/dashcore-lib/typings/script/Script";
+
+const script: Script = dashcore.Script.buildDataOut('hello world!!!');
+console.log(script.toString())
+```
+
+I was using this for all the above code snippets:
+```js
+declare module '@dashevo/dashcore-lib'
+```
+
+Also, my IDE is complaining about the `import * as dashcore` line saying:
+```
+TS7016: Could not find a declaration file for module '@dashevo/dashcore-lib'.
+'.../xchainjs-lib/node_modules/@dashevo/dashcore-lib/index.js' implicitly has
+an 'any' type. Try `npm i --save-dev @types/dashevo__dashcore-lib` if it
+exists or add a new declaration (.d.ts) file containing `declare
+module '@dashevo/dashcore-lib';`
+```
+
+But everything seems to be working correctly.
+
+Next issue.
+
+```
+bitcore.ErrorAbstractMethodInvoked: Abstract Method Invocation: Input#clearSignatures
+Abstract Method Invocation: Input#clearSignatures
+Error: 
+    at new NodeError (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/@dashevo/dashcore-lib/lib/errors/index.js:23:40)
+    at Input.Object.<anonymous>.Input.clearSignatures (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/@dashevo/dashcore-lib/lib/transaction/input/input.js:218:9)
+    at /Users/adc/go/src/github.com/xchainjs-lib/node_modules/@dashevo/dashcore-lib/lib/transaction/transaction.js:1059:11
+    at arrayEach (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/lodash/lodash.js:516:11)
+    at Function.forEach (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/lodash/lodash.js:9368:14)
+    at Transaction.Object.<anonymous>.Transaction._clearSignatures (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/@dashevo/dashcore-lib/lib/transaction/transaction.js:1058:5)
+    at Transaction.Object.<anonymous>.Transaction._updateChangeOutput (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/@dashevo/dashcore-lib/lib/transaction/transaction.js:993:8)
+    at Transaction.Object.<anonymous>.Transaction.uncheckedAddInput (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/@dashevo/dashcore-lib/lib/transaction/transaction.js:789:8)
+    at /Users/adc/go/src/github.com/xchainjs-lib/packages/xchain-dash/src/utils.ts:176:8
+    at Array.forEach (<anonymous>)
+```
+
+Looks like I either need to use `PublicKeyInput` or `PublicKeyHashInput`.
+
+Seems like a signed input is 212/214 hex characters or 106/107 bytes.
+A "fake" buffer could be:
+
+```
+Buffer.from(Array(212).fill("0").join(''), 'hex')
+```
+
+Finished off my day refactoring `accumulative` from coinselect. The essentials
+were there but it was pretty horrific to try and comprehend. The code is about
+half the number of lines now and can be just pasted directly into dash utils
+rather than having the additional dependency. Should make maintaining it a lot
+easier too.
+
+
+### 30.08.2022 Tuesday
+
+Building a tx using dashcore lib the way xchain js wants it to be done...  
+Search `break it down` in this document for a rawtx breakdown.  
+
+```
+  utxos: {value: number, script: Buffer}[],
+  outputs: {value: number, script?: Buffer}[],
+  feeRate: number,
+```
+
+```
+[!] (plugin rpt2) Error: /Users/adc/go/src/github.com/xchainjs-lib/packages/xchain-client/src/UTXOClient.ts(13,40): semantic error TS2345: Argument of type '(feeRate: number, memo?: string | undefined) => Promise<{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; ... 8 more ...; decimal: number; }>' is not assignable to parameter of type '(feeRate: number, args_0: string | undefined) => { type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; ... 8 more ...; decimal: number; }'.
+  Type 'Promise<{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; minus: (value: ... | Value, decimal?: number | undefined) => ...; ... 7 more ...; decimal: number; }>' is missing the following properties from type '{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; minus: (value: ... | Value, decimal?: number | undefined) => ...; ... 7 more ...; decimal: number; }': type, amount, plus, minus, and 8 more.
+../xchain-client/src/UTXOClient.ts
+Error: /Users/adc/go/src/github.com/xchainjs-lib/packages/xchain-client/src/UTXOClient.ts(13,40): semantic error TS2345: Argument of type '(feeRate: number, memo?: string | undefined) => Promise<{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; ... 8 more ...; decimal: number; }>' is not assignable to parameter of type '(feeRate: number, args_0: string | undefined) => { type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; ... 8 more ...; decimal: number; }'.
+  Type 'Promise<{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; minus: (value: ... | Value, decimal?: number | undefined) => ...; ... 7 more ...; decimal: number; }>' is missing the following properties from type '{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; minus: (value: ... | Value, decimal?: number | undefined) => ...; ... 7 more ...; decimal: number; }': type, amount, plus, minus, and 8 more.
+    at error (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup/dist/shared/rollup.js:5253:30)
+    at throwPluginError (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup/dist/shared/rollup.js:17926:12)
+    at Object.error (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup/dist/shared/rollup.js:18533:24)
+    at Object.error (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup/dist/shared/rollup.js:18095:38)
+    at RollupContext.error (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/src/rollupcontext.ts:37:18)
+    at /Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/src/print-diagnostics.ts:41:11
+    at arrayEach (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/node_modules/lodash/lodash.js:516:11)
+    at Function._.each [as forEach] (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/node_modules/lodash/lodash.js:9368:14)
+    at printDiagnostics (/Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/src/print-diagnostics.ts:9:2)
+    at /Users/adc/go/src/github.com/xchainjs-lib/node_modules/rollup-plugin-typescript2/src/index.ts:216:6
+```
+
+The above error is quite painful. I'm getting this from the `xchainjs-client`
+lib, something which I've included but not modified in any way. Other chain
+packages have also included it and build without issue. For some reason, dash
+doesn't. Navigating to the implementation in my IDE shows the same error. How
+are the other clients unaffected? Some config value somewhere?
+
+ts config is identical to BCH  
+rollup config doesn't seem to have any relevant changes  
+
+
+`npx rollup -c`
+
+```
+[!] (plugin rpt2) Error: /Users/adc/go/src/github.com/xchainjs-lib/packages/xchain-client/src/UTXOClient.ts(13,40): semantic error TS2345: Argument of type 
+
+'
+(
+  feeRate: number,
+  memo?: string | undefined
+) => Promise<{
+  type: Denomination.Base;
+  amount: () => BigNumber;
+  plus: (value: ... | Value, decimal?: number | undefined) => ...;
+  ... 8 more ...;
+  decimal: number; 
+}>
+' is not assignable to parameter of type '
+(
+  feeRate: number,
+  args_0: string | undefined
+) => {
+  type: Denomination.Base;
+  amount: () => BigNumber;
+  plus: (value: ... | Value, decimal?: number | undefined) => ...;
+  ... 8 more ...;
+  decimal: number;
+}'.
+
+  Type 'Promise<{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; minus: (value: ... | Value, decimal?: number | undefined) => ...; ... 7 more ...; decimal: number; }>' is missing the following properties from type '{ type: Denomination.Base; amount: () => BigNumber; plus: (value: ... | Value, decimal?: number | undefined) => ...; minus: (value: ... | Value, decimal?: number | undefined) => ...; ... 7 more ...; decimal: number; }': type, amount, plus, minus, and 8 more.
+```
+
+The first returns a promise, the latter does not.  
+I'm using exactly the same function signature as with bitcoincash.  
+
+It does seem to be to do with the `transfer` function.
+
+Found it. `checkFeeBounds` was being imported with the `/src` suffix, which 
+clearly breaks it. The error was nearly useless in working that out, I had to
+resort to trial and error. Such fun.
+
+Right. It worked. But did it output a valid transaction?
+
+`dash-cli decoderawtransaction 03000000019c0138ab980c0e9ef554fb0bc6614147af42f0a3ad51ffa3e08fb090cb75d0ec0000000000ffffffff0487d61200000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac87d61200000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000000000003b6a396a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979a58f1c08000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000`
+
+```
+{
+  "txid": "f680ee6a94b94db13cb08e6fd7c3bcdb8e6b24aa552903e39678d7b55e5dfeb4",
+  "version": 3,
+  "type": 0,
+  "size": 221,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "ecd075cb90b08fe0a3ff51ada3f042af474161c60bfb54f59e0e0c98ab38019c",
+      "vout": 0,
+      "scriptSig": {
+        "asm": "",
+        "hex": ""
+      },
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.01234567,
+      "valueSat": 1234567,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 5be96e4fbfd68370cfd30ad2f3458c580f09afb1 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "Xj4pxmpfEuWLdgvQJmiDN828WkGi1uFMfD"
+        ]
+      }
+    },
+    {
+      "value": 0.01234567,
+      "valueSat": 1234567,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 5be96e4fbfd68370cfd30ad2f3458c580f09afb1 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "Xj4pxmpfEuWLdgvQJmiDN828WkGi1uFMfD"
+        ]
+      }
+    },
+    {
+      "value": 0.00000000,
+      "valueSat": 0,
+      "n": 2,
+      "scriptPubKey": {
+        "asm": "OP_RETURN 6a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979",
+        "hex": "6a396a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979",
+        "type": "nulldata"
+      }
+    },
+    {
+      "value": 1.36089509,
+      "valueSat": 136089509,
+      "n": 3,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 5be96e4fbfd68370cfd30ad2f3458c580f09afb1 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "Xj4pxmpfEuWLdgvQJmiDN828WkGi1uFMfD"
+        ]
+      }
+    }
+  ]
+}
+```
+
+I don't think so.  
+
+OP_RETURN first byte is 6a or 106 or OP_RETURN. So that's wrong.  
+The first two outputs are the same.  
+The change address is added last, can thornode handle this now?  
+
+You might be able to set change index.  
+
+Getting `Some inputs have not been fully signed` error.
+
+The private key might not correspond to the address I'm using.
+
+Have: `4b8ef0e28519a22ed9f7102d6eef6e2a00a754e7`  
+Want: `5be96e4fbfd68370cfd30ad2f3458c580f09afb1`
+
+I just modified the hashes in the utxo response, essentially changing which
+address is authorized to spend them.
+
+This is a thing of beauty (only slightly blemished by the fact that the output
+order might not be correct):
+
+```
+dash-cli decoderawtransaction 03000000019c0138ab980c0e9ef554fb0bc6614147af42f0a3ad51ffa3e08fb090cb75d0ec000000006b483045022100ee9ad30ebb25a85b39e2174cb74a2a89fadcd880b0ba958bae95cfac4e8ce27402207cd60c883b19fe2babc2765cb0fc3243ce11899a7571e6ae4f24490a21aebaaf0121027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9ffffffff0387d61200000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac0000000000000000396a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a7079792c662f08000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000
+{
+  "txid": "8e54115904b43cf289362fd0aa03b61843e826b1d6532c5fdfebaf363c1ebe71",
+  "version": 3,
+  "type": 0,
+  "size": 292,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "ecd075cb90b08fe0a3ff51ada3f042af474161c60bfb54f59e0e0c98ab38019c",
+      "vout": 0,
+      "scriptSig": {
+        "asm": "3045022100ee9ad30ebb25a85b39e2174cb74a2a89fadcd880b0ba958bae95cfac4e8ce27402207cd60c883b19fe2babc2765cb0fc3243ce11899a7571e6ae4f24490a21aebaaf[ALL] 027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9",
+        "hex": "483045022100ee9ad30ebb25a85b39e2174cb74a2a89fadcd880b0ba958bae95cfac4e8ce27402207cd60c883b19fe2babc2765cb0fc3243ce11899a7571e6ae4f24490a21aebaaf0121027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9"
+      },
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.01234567,
+      "valueSat": 1234567,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 5be96e4fbfd68370cfd30ad2f3458c580f09afb1 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "Xj4pxmpfEuWLdgvQJmiDN828WkGi1uFMfD"
+        ]
+      }
+    },
+    {
+      "value": 0.00000000,
+      "valueSat": 0,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "OP_RETURN 737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979",
+        "hex": "6a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979",
+        "type": "nulldata"
+      }
+    },
+    {
+      "value": 1.37324076,
+      "valueSat": 137324076,
+      "n": 2,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 5be96e4fbfd68370cfd30ad2f3458c580f09afb1 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "Xj4pxmpfEuWLdgvQJmiDN828WkGi1uFMfD"
+        ]
+      }
+    }
+  ]
+}
+```
+
+Now, are we estimating the size correctly?  
+Difficult to tell that's all wrapped up in fee estimations.  
+We're not even using any of that:
+
+```
+138559643
+138558643
+```
+
+Looks like it went with a minimum default fee of 0.00001 DASH.
+
+Also I specified testnet and we're seeing mainnet addresses.
+
+Probably just because I'm decoding with a mainnet node.
+Let's try testnet:
+
+```
+docker run -it --rm --name dash ewalletdev/dashd --testnet --rpcusername=test --rpcpassword=test
+docker exec dash dash-cli --testnet --rpcusername=test --rpcpassword=test decoderawtransaction 03000000019c0138ab980c0e9ef554fb0bc6614147af42f0a3ad51ffa3e08fb090cb75d0ec000000006a47304402203fed3d2ac6e961294307b181df3c9a9acf3bd5b74f60bd5bcaf5b3021676dc1202206836089e292e0301dd6573e5875b67b5316f232df3cb920c4901b0833bc966d30121027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9ffffffff0387d61200000000001976a914313ce397abb67051990fe209ebc44db5a3817b0488ac0000000000000000396a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a7079792c662f08000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000
+```
+
+```
+{
+  "txid": "adb063d61356c4ff68fca7e989805faf8e24a86e3f54eba34ef3dc3a0dce6e31",
+  "version": 3,
+  "type": 0,
+  "size": 291,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "ecd075cb90b08fe0a3ff51ada3f042af474161c60bfb54f59e0e0c98ab38019c",
+      "vout": 0,
+      "scriptSig": {
+        "asm": "304402203fed3d2ac6e961294307b181df3c9a9acf3bd5b74f60bd5bcaf5b3021676dc1202206836089e292e0301dd6573e5875b67b5316f232df3cb920c4901b0833bc966d3[ALL] 027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9",
+        "hex": "47304402203fed3d2ac6e961294307b181df3c9a9acf3bd5b74f60bd5bcaf5b3021676dc1202206836089e292e0301dd6573e5875b67b5316f232df3cb920c4901b0833bc966d30121027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9"
+      },
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.01234567,
+      "valueSat": 1234567,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 313ce397abb67051990fe209ebc44db5a3817b04 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a914313ce397abb67051990fe209ebc44db5a3817b0488ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "yQonuFGw7Yd781ScM7JPMmQJxWeiFyMx57"
+        ]
+      }
+    },
+    {
+      "value": 0.00000000,
+      "valueSat": 0,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "OP_RETURN 737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979",
+        "hex": "6a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a707979",
+        "type": "nulldata"
+      }
+    },
+    {
+      "value": 1.37324076,
+      "valueSat": 137324076,
+      "n": 2,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 5be96e4fbfd68370cfd30ad2f3458c580f09afb1 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "yUhRyiu6gTAQyRqwsd2cQ9SUo2m5cbyfHD"
+        ]
+      }
+    }
+  ]
+}
+```
+
+That looks good.
+
+The `getFee` method isn't returning the expected count.
+
+```
+0300 version
+0000 type
+01 input count
+9c0138ab980c0e9ef554fb0bc6614147 ...
+af42f0a3ad51ffa3e08fb090cb75d0ec input output txid
+00000000 input output index
+6b (107?)
+  48
+    3045022100ee9ad30ebb25a85b39e2174cb74a2a89fadcd880b0ba958bae95cfac4e8ce27402207cd60c883b19fe2babc2765cb0fc3243ce11899a7571e6ae4f24490a21aebaaf01
+  21
+    027887b7dbccb26dc0b7e3e4174b986cbb5011ade42654d3a92f7bdba3bd08c8f9
+ffffffff
+03
+87d61200000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac0000000000000000396a37737761703a6263682e6263683a717033776a706133746a6c6a3034327a32777637686168736c646777687779307271397379776a7079792c662f08000000001976a9145be96e4fbfd68370cfd30ad2f3458c580f09afb188ac00000000
+```
+
+Better. The memo output was using the wrong byte values.
+
+We have 2 failing tests.  
+Had to remove this catchall 'Nad'  
+
+```
+    // mock.onAny(/.*/).reply((config: MockConfig) => {
+    //   console.log("=>", config.url)
+    //   return [500, 'Nad']
+    // })
+```
+
+All tests passing for the client. Now util...
+
+```
+  const testnet_address = 'yUhRyiu6gTAQyRqwsd2cQ9SUo2m5cbyfHD'
+  const mainnet_address = 'Xj4pxmpfEuWLdgvQJmiDN828WkGi1uFMfD'
+```
+
+All tests are passing.  
+Todo list for tomorrow:  
+- [ ] Not sure why the inbound-addresses endpoints are mocked, they're not used in the tests. Add DASH and implement/utilise or remove.
+- [ ] Mimir values are mocked, why?
+- [ ] Clean up any remaining todos.
+- [ ] I think I'd like to remove broadcasttx from util, it is my api after all
+- [ ] Remove redundant/unused deps.
+- [ ] Test against a real node.
+- [ ] Remove console.logs
+- [ ] Might have to rework it so the change address is vout[1] rather than always being last, need to look at TC code to see if they've updated the way OP_RETURN is parsed
+- [ ] Get standardfee and other fee methods might not really apply as there seems to be a default min of 1000, check with real txs
+- [ ] getRawTx doesn't seem to be needed?
 
 
 
